@@ -1,0 +1,9 @@
+{
+    "knee_angle_min":120,
+    "knee_angle_max":180,
+    "rest_pose_raise_angle_min":160,
+    "rest_pose_raise_angle_max":180,
+    "raise_pose_raise_angle_min":120,
+    "raise_pose_raise_angle_max":164,
+    "HOLD_SECS":2
+}
