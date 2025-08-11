@@ -7,20 +7,21 @@ import cv2
 import mediapipe as mp
 import numpy as np
 
-from .lib import flags
-from .lib import graphics_utils
-from .lib import mp_utils
-from .lib.basic_math import (
+from physiocore.lib import flags
+#from .lib import flags
+from physiocore.lib import graphics_utils
+from physiocore.lib import mp_utils
+from physiocore.lib.basic_math import (
     between,
     calculate_angle,
     calculate_mid_point
 )
-from .lib.file_utils import (
+from physiocore.lib.file_utils import (
     announce,
     create_output_files,
     release_files
 )
-from .lib.landmark_utils import (
+from physiocore.lib.landmark_utils import (
     calculate_angle_between_landmarks,
     upper_body_is_lying_down
 )
