@@ -1,4 +1,4 @@
-import lib.basic_math as basic_math
+from . import basic_math as basic_math
 import mediapipe as mp
 import numpy as np
 

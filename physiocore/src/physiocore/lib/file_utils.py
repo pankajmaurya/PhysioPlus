@@ -1,7 +1,7 @@
 import os
 
 import cv2
-from lib.platform_utils import save_video_codec
+from .platform_utils import save_video_codec
 from playsound import playsound
 
 

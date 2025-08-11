@@ -7,14 +7,14 @@ import cv2
 import mediapipe as mp
 import numpy as np
 
-import lib.flags as flags
-import lib.graphics_utils as graphics_utils
-import lib.mp_utils as mp_utils
-from lib.basic_math import (between, calculate_angle,
+from . import flags as flags
+from . import graphics_utils as graphics_utils
+from . import mp_utils as mp_utils
+from .lib.basic_math import (between, calculate_angle,
                             calculate_mid_point)
-from lib.file_utils import (announce, create_output_files,
+from .lib.file_utils import (announce, create_output_files,
                             release_files)
-from lib.landmark_utils import (calculate_angle_between_landmarks,
+from .lib.landmark_utils import (calculate_angle_between_landmarks,
                                 detect_feet_orientation,
                                 lower_body_on_ground)
 

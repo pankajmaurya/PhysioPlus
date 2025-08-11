@@ -6,15 +6,15 @@ from threading import Thread
 import cv2
 import mediapipe as mp
 
-import lib.flags as flags
-import lib.graphics_utils as graphics_utils
-import lib.mp_utils as mp_utils
-from lib.basic_math import between
-from lib.file_utils import (announce, create_output_files,
+from . import flags as flags
+from . import graphics_utils as graphics_utils
+from . import mp_utils as mp_utils
+from .lib.basic_math import between
+from .lib.file_utils import (announce, create_output_files,
                             release_files)
-from lib.landmark_utils import (calculate_angle_between_landmarks,
+from .lib.landmark_utils import (calculate_angle_between_landmarks,
                                 lower_body_on_ground)
-from lib.mp_utils import pose2
+from .lib.mp_utils import pose2
 
 # Handy aliases
 mp_drawing = mp.solutions.drawing_utils

@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "physiocore"
+version = "0.1.8"
+description = "A physiotherapy exercise toolkit with movement scripts, utilities, and resources."
+readme = "README.md"
+requires-python = "==3.10.18"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Pankaj Maurya", email = "pankajmaurya@gmail.com" }
+]
+dependencies = [
+    "mediapipe==0.10.21",
+    "opencv-python<4.12",
+    "opencv-contrib-python<4.12",
+    "numpy<2",
+    "playsound==1.2.2"
+]
+keywords = ["physiotherapy", "exercise", "movement", "rehab"]
+
+[project.urls]
+Homepage = "https://github.com/pankajmaurya/PhysioPlus"
+Repository = "https://github.com/pankajmaurya/PhysioPlus"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["physiocore", "physiocore.*"]
+
+[tool.setuptools.package-data]
+"physiocore" = [
+    "lib/sounds/*.wav"
+]
