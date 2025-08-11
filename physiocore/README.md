@@ -1,7 +1,16 @@
 # Computer vision based exercise tracker
 - Uses mediapipe and opencv-python
 - Use python 3.10.18
+- Why? https://www.python.org/downloads/release/python-31018/ is last release of 3.10 as of Aug 2025
+- Will be supported till Oct 2026
+- https://ai.google.dev/edge/mediapipe/solutions/setup_python says we can use upto 3.12 now, so I will soon upgrade 
 
+# publish new version
+```sh
+rm -rf dist build src/physiocore.egg-info
+python -m build
+twine upload --repository testpypi dist/*
+```
 
 # installation
 ```sh
