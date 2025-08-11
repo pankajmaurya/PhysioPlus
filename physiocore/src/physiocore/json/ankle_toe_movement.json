@@ -1,0 +1,7 @@
+{
+    "relax_ankle_angle_min":80,
+    "relax_ankle_angle_max":110,
+    "stretch_ankle_angle_min":130,
+    "stretch_ankle_angle_max":180,
+    "HOLD_SECS":0.5
+}

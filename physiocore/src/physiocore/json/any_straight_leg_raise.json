@@ -1,0 +1,11 @@
+{
+    "knee_angle_min":150,
+    "knee_angle_max":180,
+    "rest_pose_raise_angle_min":160,
+    "rest_pose_raise_angle_max":180,
+    "raise_pose_raise_angle_min":135,
+    "raise_pose_raise_angle_max":158,
+    "HOLD_SECS":3,
+    "_comment":"multiplyer val - 1 for 100% 0.5 for 50% (use val 10 to nullify side lying condition)",
+    "multiplyer":1
+}

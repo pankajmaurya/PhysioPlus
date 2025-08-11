@@ -1,0 +1,59 @@
+# Computer vision based exercise tracker
+- Uses mediapipe and opencv-python
+- Use python 3.10.18
+- Why? https://www.python.org/downloads/release/python-31018/ is last release of 3.10 as of Aug 2025
+- Will be supported till Oct 2026
+- https://ai.google.dev/edge/mediapipe/solutions/setup_python says we can use upto 3.12 now, so I will soon upgrade 
+
+# publish new version
+```sh
+rm -rf dist build src/physiocore.egg-info
+python -m build
+twine upload --repository testpypi dist/*
+```
+
+# installation
+```sh
+python3.10 -m venv testinstall-0.2.2  ; source testinstall-0.2.2/bin/activate
+pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple physiocore
+```
+
+# upgrade from existing installation
+```sh
+pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple physiocore==0.2.4
+```
+
+# Versioning
+- last testing on Ankle toe movement done on Mac Sequoia 15.6, physiocore==0.2.2
+
+```
+(testinstall-0.2.2) ➜  TestPhysioPlus python demo.py
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1754933487.157762 3414708 gl_context.cc:369] GL version: 2.1 (2.1 Metal - 89.4), renderer: Apple M4 Pro
+Downloading model to /Users/pankaj/TechCareer/TestPhysioPlus/testinstall-0.2.2/lib/python3.10/site-packages/mediapipe/modules/pose_landmark/pose_landmark_heavy.tflite
+INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+W0000 00:00:1754933487.193762 3415496 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1754933487.201640 3415498 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+I0000 00:00:1754933491.431292 3414708 gl_context.cc:369] GL version: 2.1 (2.1 Metal - 89.4), renderer: Apple M4 Pro
+Settings are --debug False, --video None, --render_all False --save_video None --lenient_mode True --fps 30
+W0000 00:00:1754933491.482758 3415548 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1754933491.508220 3415557 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
+W0000 00:00:1754933539.888523 3415552 landmark_projection_calculator.cc:186] Using NORM_RECT without IMAGE_DIMENSIONS is only supported for the square ROI. Provide IMAGE_DIMENSIONS or use PROJECTION_MATRIX.
+time for raise 1754933545.1654909
+time for raise 1754933546.743605
+time for raise 1754933562.706252
+time for raise 1754933565.942921
+time for raise 1754933567.60865
+time for raise 1754933574.3253388
+time for raise 1754933575.041138
+time for raise 1754933575.435921
+time for raise 1754933576.240452
+time for raise 1754933576.639755
+time for raise 1754933603.21583
+time for raise 1754933628.344631
+time for raise 1754933629.984603
+time for raise 1754933630.3845131
+Final count: 3
+```
+
+See demo.py in tests
