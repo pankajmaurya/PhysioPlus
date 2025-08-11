@@ -18,6 +18,11 @@ python3.10 -m venv testinstall-0.2.2  ; source testinstall-0.2.2/bin/activate
 pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple physiocore
 ```
 
+# upgrade from existing installation
+```sh
+pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple physiocore==0.2.4
+```
+
 # Versioning
 - last testing on Ankle toe movement done on Mac Sequoia 15.6, physiocore==0.2.2
 
