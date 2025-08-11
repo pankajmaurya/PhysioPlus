@@ -9,6 +9,6 @@ REM Create videos directory if it doesn't exist
 if not exist "videos" mkdir "videos"
 
 REM Run with debug and save_video flags
-python physiocore/bridging.py --debug --save_video "videos/bridging_%timestamp%.mp4"
+python "physiocore\src\physiocore\bridging.py" --debug --save_video "videos\bridging_%timestamp%.mp4"
 
 echo Exercise video saved as: bridging_%timestamp%.mp4

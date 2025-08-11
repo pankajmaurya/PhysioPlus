@@ -9,6 +9,6 @@ REM Create videos directory if it doesn't exist
 if not exist "videos" mkdir "videos"
 
 REM Run with debug and save_video flags
-python physiocore/cobra_stretch.py --debug --save_video "videos/cobra_%timestamp%.mp4"
+python "physiocore\src\physiocore\cobra_stretch.py" --debug --save_video "videos\cobra_%timestamp%.mp4"
 
 echo Exercise video saved as: cobra_%timestamp%.mp4

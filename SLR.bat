@@ -9,6 +9,6 @@ REM Create videos directory if it doesn't exist
 if not exist "videos" mkdir "videos"
 
 REM Run with debug and save_video flags
-python physiocore/any_straight_leg_raise.py --debug --save_video "videos/slr_%timestamp%.mp4"
+python "physiocore\src\physiocore\any_straight_leg_raise.py" --debug --save_video "videos\slr_%timestamp%.mp4"
 
 echo Exercise video saved as: slr_%timestamp%.mp4
