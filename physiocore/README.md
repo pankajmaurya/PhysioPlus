@@ -14,6 +14,11 @@ twine upload --repository testpypi dist/*
 
 # installation
 ```sh
+pip install physiocore
+```
+
+Only if we are trying to install from testpypi (bleeding edge releases will be done here)
+```sh
 python3.10 -m venv testinstall-0.2.2  ; source testinstall-0.2.2/bin/activate
 pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple physiocore
 ```
@@ -26,7 +31,35 @@ pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://
 # Versioning
 - last testing on Ankle toe movement done on Mac Sequoia 15.6, physiocore==0.2.2
 
+# Usage Guide
+```py
+from physiocore.ankle_toe_movement import AnkleToeMovementTracker
+tracker = AnkleToeMovementTracker()
+tracker.start()
+
+from physiocore.cobra_stretch import CobraStretchTracker
+tracker = CobraStretchTracker()
+tracker.start()
+
+from physiocore.bridging import BridgingTracker
+tracker = BridgingTracker()
+tracker.start()
+
+#Similar imports for Straight leg raise and prone straight leg raise
+from physiocore.any_prone_straight_leg_raise import AnyProneSLRTracker
+
+from physiocore.any_straight_leg_raise import AnySLRTracker
 ```
+# Testing, Usage 
+```
+python demo.py --save_video bridging.avi --debug
+
+Contents of demo.py below:
+from physiocore.bridging import BridgingTracker
+tracker = BridgingTracker()
+tracker.start()
+
+
 (testinstall-0.2.2) ➜  TestPhysioPlus python demo.py
 WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
 I0000 00:00:1754933487.157762 3414708 gl_context.cc:369] GL version: 2.1 (2.1 Metal - 89.4), renderer: Apple M4 Pro
