@@ -45,6 +45,10 @@ pip install --index-url https://test.pypi.org/simple/ \
 
 ## Quick Start
 
+### 📺 Video Demos
+
+Watch our [YouTube demo playlist](https://www.youtube.com/watch?v=VtKXyhypv7E&list=PL7eJwmV22aNAKIna10t7gCtlGDB4jcrvG) to see PhysioCore in action with real exercise tracking examples.
+
 ### Basic Usage
 
 ```python
