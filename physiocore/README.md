@@ -7,9 +7,13 @@
 
 # publish new version
 ```sh
+PhysioPlus/physiocore $ pip install -e .
+pip install build
 rm -rf dist build src/physiocore.egg-info
 python -m build
+pip install twine
 twine upload --repository testpypi dist/*
+twine upload dist/*
 ```
 
 # installation
@@ -25,6 +29,7 @@ pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://
 
 # upgrade from existing installation
 ```sh
+pip install -U physiocore==0.3.0
 pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple physiocore==0.2.4
 ```
 
