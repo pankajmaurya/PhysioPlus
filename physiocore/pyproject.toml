@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "physiocore"
-version = "0.2.5"
+version = "0.2.7"
 description = "A physiotherapy exercise toolkit with movement scripts, utilities, and resources."
 readme = "README.md"
-requires-python = "==3.10.18"
+requires-python = ">=3.10.12,<=3.10.18"
 license = { file = "LICENSE" }
 authors = [
     { name = "Pankaj Maurya", email = "pankajmaurya@gmail.com" }
