@@ -1,4 +1,4 @@
-from physiocore.cobra_stretch import CobraStretchTracker
-tracker = CobraStretchTracker()
-tracker.start()
+from physiocore import create_tracker
 
+tracker = create_tracker("cobra_stretch")
+tracker.start()
