@@ -80,6 +80,7 @@ class AnyProneSLRTracker:
         self.cap = None
         self.output = None
         self.output_with_info = None
+        self.running = False
 
     def _default_config_path(self):
         script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -95,13 +96,14 @@ class AnyProneSLRTracker:
             return {}
 
     def start(self):
+        self.running = True
         self.cap = cv2.VideoCapture(self.video if self.video else 0)
         input_fps = int(self.cap.get(cv2.CAP_PROP_FPS)) or 30
         delay = int(1000 / input_fps)
         if self.save_video:
             self.output, self.output_with_info = create_output_files(self.cap, self.save_video)
 
-        while True:
+        while self.running:
             success, landmarks, frame, pose_landmarks = mp_utils.processFrameAndGetLandmarks(self.cap, pose2)
             if not success:
                 break
@@ -161,7 +163,7 @@ class AnyProneSLRTracker:
 
             key = cv2.waitKey(delay) & 0xFF
             if key == ord('q'):
-                break
+                self.stop()
             elif key == ord('p'):
                 self._pause_loop()
 
@@ -227,8 +229,11 @@ class AnyProneSLRTracker:
             if key == ord('r'):  # Resume
                 break
             elif key == ord('q'):  # Quit
-                self._cleanup()
-                exit()
+                self.stop()
+                break
+
+    def stop(self):
+        self.running = False
 
     def _cleanup(self):
         if self.cap:
