@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "physiocore"
-version = "0.2.5"
+version = "0.3.1"
 description = "A physiotherapy exercise toolkit with movement scripts, utilities, and resources."
 readme = "README.md"
-requires-python = "==3.10.18"
+requires-python = ">=3.10.11,<=3.10.18"
 license = { file = "LICENSE" }
 authors = [
     { name = "Pankaj Maurya", email = "pankajmaurya@gmail.com" }
@@ -17,8 +17,8 @@ dependencies = [
     "opencv-python<4.12",
     "opencv-contrib-python<4.12",
     "numpy<2",
-    "playsound==1.2.2",
-    "pyobjc; sys_platform == 'darwin'"
+    "pygame",
+    "setuptools<81"
 ]
 keywords = ["physiotherapy", "exercise", "movement", "rehab"]
 

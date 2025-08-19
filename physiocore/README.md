@@ -7,9 +7,38 @@
 
 # publish new version
 ```sh
+PhysioPlus/physiocore $ pip install -e .
+pip install build
 rm -rf dist build src/physiocore.egg-info
 python -m build
+pip install twine
 twine upload --repository testpypi dist/*
+twine upload dist/*
+```
+
+## Development Installation
+
+To install this package in editable mode for development:
+
+```bash
+pip install -e .
+```
+
+**What this does:**
+- Installs the package by linking to the source code (rather than copying files)
+- Changes to the source code are immediately available without reinstalling
+- Perfect for active development and testing
+
+**Requirements:**
+- Package must have `setup.py`, `setup.cfg`, or `pyproject.toml`
+- Use this when you're modifying the code frequently
+
+**Alternative installations:**
+```bash
+pip install -e /path/to/package     # Install from different directory
+pip install .                      # Regular installation (copies files)
+pip install -e git+https://github.com/username/repo.git  # Install from GitHub in editable mode
+pip install -e git+https://github.com/username/repo.git@branch-name  # Install specific branch
 ```
 
 # installation
@@ -25,6 +54,7 @@ pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://
 
 # upgrade from existing installation
 ```sh
+pip install -U physiocore==0.3.0
 pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple physiocore==0.2.4
 ```
 
