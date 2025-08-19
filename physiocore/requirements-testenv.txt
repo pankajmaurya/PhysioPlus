@@ -32,7 +32,6 @@ opencv-contrib-python==4.11.0.86
 opencv-python==4.11.0.86
 opt_einsum==3.4.0
 packaging==25.0
-physiocore==0.2.4
 pillow==11.3.0
 playsound==1.2.2
 protobuf==4.25.8
