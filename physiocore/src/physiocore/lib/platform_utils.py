@@ -13,4 +13,5 @@ if platform.system() == 'Darwin':
 elif platform.system() == 'Windows':
 	save_video_codec = save_video_codec_win
 else:
-	raise Exception('Unsupported platform currently')
+	# Add a default video codec for Linux environments
+	save_video_codec = cv2.VideoWriter_fourcc(*'XVID')
