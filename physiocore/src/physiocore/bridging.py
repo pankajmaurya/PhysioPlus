@@ -5,9 +5,9 @@ from threading import Thread
 import cv2
 import mediapipe as mp
 
-from physiocore.lib import flags, graphics_utils, mp_utils
+from physiocore.lib import modern_flags, graphics_utils, mp_utils
 from physiocore.lib.basic_math import between, calculate_angle
-from physiocore.lib.file_utils import announce, create_output_files, release_files
+from physiocore.lib.file_utils import announceForCount, create_output_files, release_files
 from physiocore.lib.landmark_utils import calculate_angle_between_landmarks, upper_body_is_lying_down
 
 mp_drawing = mp.solutions.drawing_utils
@@ -68,7 +68,7 @@ class PoseTracker:
 
 class BridgingTracker:
     def __init__(self, config_path=None):
-        self.debug, self.video, self.render_all, self.save_video, self.lenient_mode = flags.parse_flags()
+        self.debug, self.video, self.render_all, self.save_video, self.lenient_mode = modern_flags.parse_flags()
         self.config = self._load_config(config_path or self._default_config_path())
         self.hold_secs = self.config.get("HOLD_SECS", 5)
         self.pose_tracker = PoseTracker(self.config, self.lenient_mode)
@@ -159,7 +159,7 @@ class BridgingTracker:
                 self.count += 1
                 self.pose_tracker.reset()
                 self.check_timer = False
-                Thread(target=announce).start()
+                announceForCount(self.count)
             else:
                 cv2.putText(
                     frame,
