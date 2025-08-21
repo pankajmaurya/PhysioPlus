@@ -5,9 +5,9 @@ from threading import Thread
 import cv2
 import mediapipe as mp
 
-from physiocore.lib import flags, graphics_utils, mp_utils
+from physiocore.lib import modern_flags, graphics_utils, mp_utils
 from physiocore.lib.basic_math import between, calculate_angle
-from physiocore.lib.file_utils import announce, create_output_files, release_files
+from physiocore.lib.file_utils import announceForCount, create_output_files, release_files
 from physiocore.lib.landmark_utils import calculate_angle_between_landmarks, upper_body_is_lying_down
 
 mp_drawing = mp.solutions.drawing_utils
@@ -68,7 +68,7 @@ class PoseTracker:
 
 class BridgingTracker:
     def __init__(self, config_path=None):
-        self.debug, self.video, self.render_all, self.save_video, self.lenient_mode = flags.parse_flags()
+        self.debug, self.video, self.render_all, self.save_video, self.lenient_mode = modern_flags.parse_flags()
         self.config = self._load_config(config_path or self._default_config_path())
         self.hold_secs = self.config.get("HOLD_SECS", 5)
         self.pose_tracker = PoseTracker(self.config, self.lenient_mode)
@@ -93,11 +93,21 @@ class BridgingTracker:
             return {}
 
     def start(self):
+        self.process_video()
+
+    def process_video(self, video_path=None, display=True):
+        self.video = video_path if video_path is not None else self.video
         self.cap = cv2.VideoCapture(self.video if self.video else 0)
+
+        if not self.cap.isOpened():
+            print(f"Error opening video stream or file: {self.video}")
+            return 0
+
         input_fps = int(self.cap.get(cv2.CAP_PROP_FPS)) or 30
         delay = int(1000 / input_fps)
         if self.save_video:
             self.output, self.output_with_info = create_output_files(self.cap, self.save_video)
+
         while True:
             success, landmarks, frame, pose_landmarks = mp_utils.processFrameAndGetLandmarks(self.cap)
             if not success:
@@ -131,24 +141,27 @@ class BridgingTracker:
                 self.check_timer = False
 
             if self.pose_tracker.resting_pose and self.pose_tracker.raise_pose:
-                self._handle_pose_hold(frame)
+                self._handle_pose_hold(frame if display else None)
 
-            self._draw_info(
-                frame, lying_down, l_knee_angle, r_knee_angle, l_raise_angle, r_raise_angle,
-                l_ankle_close, r_ankle_close, self.pose_tracker.resting_pose, self.pose_tracker.raise_pose, pose_landmarks
-            )
+            if display:
+                self._draw_info(
+                    frame, lying_down, l_knee_angle, r_knee_angle, l_raise_angle, r_raise_angle,
+                    l_ankle_close, r_ankle_close, self.pose_tracker.resting_pose, self.pose_tracker.raise_pose, pose_landmarks
+                )
 
-            if self.save_video and self.debug:
-                self.output_with_info.write(frame)
+                if self.save_video and self.debug:
+                    self.output_with_info.write(frame)
 
-            key = cv2.waitKey(delay) & 0xFF
-            if key == ord('q'):
-                break
-            elif key == ord('p'):
-                self._pause_loop()
-        self._cleanup()
+                key = cv2.waitKey(delay) & 0xFF
+                if key == ord('q'):
+                    break
+                elif key == ord('p'):
+                   self._pause_loop()
 
-    def _handle_pose_hold(self, frame):
+        self._cleanup(display=display)
+        return self.count
+
+    def _handle_pose_hold(self, frame=None):
         if not self.check_timer:
             self.old_time = time.time()
             self.check_timer = True
@@ -159,8 +172,8 @@ class BridgingTracker:
                 self.count += 1
                 self.pose_tracker.reset()
                 self.check_timer = False
-                Thread(target=announce).start()
-            else:
+                announceForCount(self.count)
+            elif frame is not None:
                 cv2.putText(
                     frame,
                     f'hold pose: {self.hold_secs - cur_time + self.old_time:.2f}',
@@ -199,12 +212,13 @@ class BridgingTracker:
                 self._cleanup()
                 exit()
 
-    def _cleanup(self):
+    def _cleanup(self, display=True):
         if self.cap:
             self.cap.release()
         if self.save_video:
             release_files(self.output, self.output_with_info)
-        cv2.destroyAllWindows()
+        if display:
+            cv2.destroyAllWindows()
         print(f"Final count: {self.count}")
 
 if __name__ == "__main__":

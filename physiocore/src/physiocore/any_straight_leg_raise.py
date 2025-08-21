@@ -5,7 +5,7 @@ from threading import Thread
 import cv2
 import mediapipe as mp
 
-from physiocore.lib import flags, graphics_utils
+from physiocore.lib import modern_flags, graphics_utils
 from physiocore.lib.basic_math import between, calculate_mid_point, calculate_signed_angle
 from physiocore.lib.file_utils import announce, create_output_files, release_files
 from physiocore.lib.landmark_utils import calculate_angle_between_landmarks, upper_body_is_lying_down
@@ -81,7 +81,7 @@ class PoseTracker:
 
 class AnySLRTracker:
     def __init__(self, config_path=None):
-        self.debug, self.video, self.render_all, self.save_video, self.lenient_mode = flags.parse_flags()
+        self.debug, self.video, self.render_all, self.save_video, self.lenient_mode = modern_flags.parse_flags()
         self.config = self._load_config(config_path or self._default_config_path())
         self.hold_secs = self.config.get("HOLD_SECS", 3)
         self.multiplyer = self.config.get("multiplyer", 1.0)
