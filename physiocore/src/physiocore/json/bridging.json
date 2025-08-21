@@ -5,5 +5,5 @@
     "rest_angle_max":130,
     "raise_angle_min":155,
     "raise_angle_max":180,
-    "HOLD_SECS":5
+    "HOLD_SECS":2
 }
