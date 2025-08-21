@@ -7,7 +7,7 @@ import mediapipe as mp
 
 from physiocore.lib import modern_flags, graphics_utils, mp_utils
 from physiocore.lib.basic_math import between, calculate_angle, calculate_mid_point
-from physiocore.lib.file_utils import announce, create_output_files, release_files
+from physiocore.lib.file_utils import announceForCount, create_output_files, release_files
 from physiocore.lib.landmark_utils import calculate_angle_between_landmarks, detect_feet_orientation, upper_body_is_lying_down
 from physiocore.lib.mp_utils import pose2
 
@@ -179,7 +179,7 @@ class AnyProneSLRTracker:
                     self.count += 1
                     self.pose_tracker.reset()
                     self.l_check_timer = False
-                    Thread(target=announce).start()
+                    announceForCount(self.count)
                 else:
                     cv2.putText(frame, f'hold left leg: {self.hold_secs - now + self.l_time:.2f}',
                                 (250, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
@@ -193,7 +193,7 @@ class AnyProneSLRTracker:
                     self.count += 1
                     self.pose_tracker.reset()
                     self.r_check_timer = False
-                    Thread(target=announce).start()
+                    announceForCount(self.count)
                 else:
                     cv2.putText(frame, f'hold right leg: {self.hold_secs - now + self.r_time:.2f}',
                                 (250, 90), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
