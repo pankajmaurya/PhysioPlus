@@ -8,7 +8,7 @@ class TestBridgingTracker(unittest.TestCase):
         tracker = BridgingTracker()
         
         # Override HOLD_SECS
-        tracker.hold_secs = 1.0
+        tracker.hold_secs = 0.1
         
         # Get the path to the video file
         video_path = os.path.join(os.path.dirname(__file__), 'bridging.mp4')

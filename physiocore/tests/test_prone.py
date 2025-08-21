@@ -18,7 +18,7 @@ class TestAnyProneSLRTracker(unittest.TestCase):
         # In development mode, try running with display ON too.
         # count = tracker.process_video(video_path=video_path, display=True)
         
-        # Assert the count is 1
+        # Assert the count is 20
         self.assertEqual(count, 20)
 
 if __name__ == '__main__':
