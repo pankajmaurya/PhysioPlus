@@ -7,7 +7,7 @@ import mediapipe as mp
 
 from physiocore.lib import modern_flags, graphics_utils, mp_utils
 from physiocore.lib.basic_math import between, calculate_angle, calculate_mid_point
-from physiocore.lib.file_utils import announce, announce10, create_output_files, release_files
+from physiocore.lib.file_utils import announceForCount, create_output_files, release_files
 from physiocore.lib.landmark_utils import calculate_angle_between_landmarks, lower_body_on_ground, detect_feet_orientation
 
 mp_drawing = mp.solutions.drawing_utils
@@ -151,10 +151,7 @@ class CobraStretchTracker:
                 self.count += 1
                 self.pose_tracker.reset()
                 self.check_timer = False
-                if self.count % 10 != 0:
-                    Thread(target=announce).start()
-                else:
-                    Thread(target=announce10).start()
+                announceForCount(self.count)
  
             else:
                 cv2.putText(
