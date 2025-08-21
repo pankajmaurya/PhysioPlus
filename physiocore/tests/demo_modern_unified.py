@@ -1,4 +1,6 @@
 # In demo_unified.py, replace the old argparse with:
+import sys
+
 from physiocore import create_tracker
 from physiocore.lib.modern_flags import get_config
 
