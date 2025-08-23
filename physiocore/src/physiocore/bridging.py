@@ -80,6 +80,8 @@ class BridgingTracker:
         self.output = None
         self.output_with_info = None
         self.renderer = ExerciseInfoRenderer()
+        self.running = False
+        self.thread = None
 
     def _default_config_path(self):
         script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -95,7 +97,15 @@ class BridgingTracker:
             return {}
 
     def start(self):
-        self.process_video()
+        self.running = True
+        self.thread = Thread(target=self.process_video)
+        self.thread.start()
+
+    def stop(self):
+        self.running = False
+        if self.thread:
+            self.thread.join()
+        self._cleanup()
 
     def process_video(self, video_path=None, display=True):
         self.video = video_path if video_path is not None else self.video
@@ -110,9 +120,10 @@ class BridgingTracker:
         if self.save_video:
             self.output, self.output_with_info = create_output_files(self.cap, self.save_video)
 
-        while True:
+        while self.running:
             success, landmarks, frame, pose_landmarks = mp_utils.processFrameAndGetLandmarks(self.cap)
             if not success:
+                self.stop()
                 break
             if frame is None:
                 continue
@@ -157,11 +168,10 @@ class BridgingTracker:
 
                 key = cv2.waitKey(delay) & 0xFF
                 if key == ord('q'):
+                    self.stop()
                     break
                 elif key == ord('p'):
                    self._pause_loop()
-
-        self._cleanup(display=display)
         return self.count
 
     def _handle_pose_hold(self, frame=None):
@@ -215,8 +225,8 @@ class BridgingTracker:
             if key == ord('r'):
                 break
             elif key == ord('q'):
-                self._cleanup()
-                exit()
+                self.stop()
+                break
 
     def _cleanup(self, display=True):
         if self.cap:

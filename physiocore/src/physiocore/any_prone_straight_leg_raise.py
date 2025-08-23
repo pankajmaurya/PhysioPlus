@@ -82,6 +82,8 @@ class AnyProneSLRTracker:
         self.output = None
         self.output_with_info = None
         self.renderer = ExerciseInfoRenderer()
+        self.running = False
+        self.thread = None
 
     def _default_config_path(self):
         script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -96,10 +98,12 @@ class AnyProneSLRTracker:
             print("Config file not found, using default values")
             return {}
 
-    def process_video(self, video_path, display=False):
-        self.cap = cv2.VideoCapture(video_path)
+    def process_video(self, video_path=None, display=True):
+        self.video = video_path if video_path is not None else self.video
+        self.cap = cv2.VideoCapture(self.video if self.video else 0)
+
         if not self.cap.isOpened():
-            print(f"Error opening video file: {video_path}")
+            print(f"Error opening video stream or file: {self.video}")
             return 0
 
         input_fps = int(self.cap.get(cv2.CAP_PROP_FPS)) or 30
@@ -107,9 +111,10 @@ class AnyProneSLRTracker:
         if self.save_video:
             self.output, self.output_with_info = create_output_files(self.cap, self.save_video)
 
-        while True:
+        while self.running:
             success, landmarks, frame, pose_landmarks = mp_utils.processFrameAndGetLandmarks(self.cap, pose2)
             if not success:
+                self.stop()
                 break
             if frame is None:
                 continue
@@ -171,15 +176,22 @@ class AnyProneSLRTracker:
             if display:
                 key = cv2.waitKey(delay) & 0xFF
                 if key == ord('q'):
+                    self.stop()
                     break
                 elif key == ord('p'):
                     self._pause_loop()
-
-        self._cleanup()
         return self.count
 
     def start(self):
-        self.process_video(self.video if self.video else 0, display=True)
+        self.running = True
+        self.thread = Thread(target=self.process_video, args=(self.video if self.video else 0, True))
+        self.thread.start()
+
+    def stop(self):
+        self.running = False
+        if self.thread:
+            self.thread.join()
+        self._cleanup()
 
     def _handle_pose_hold(self, frame, leg='left'):
         now = time.time()
@@ -245,8 +257,8 @@ class AnyProneSLRTracker:
             if key == ord('r'):  # Resume
                 break
             elif key == ord('q'):  # Quit
-                self._cleanup()
-                exit()
+                self.stop()
+                break
 
     def _cleanup(self):
         if self.cap:
