@@ -122,6 +122,11 @@ Final count: 3
 ```
 
 ## Development
+### Unit tests
+
+```sh
+python -m unittest discover physiocore/tests
+```
 
 ### Publishing New Version
 
