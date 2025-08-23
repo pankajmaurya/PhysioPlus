@@ -183,3 +183,22 @@ class ExerciseInfoRenderer:
             return (255, 255, 0)  # Cyan for proximity states
         else:
             return (0, 255, 0)  # Default green
+
+
+def pause_loop(cleanup_callback=None):
+    """Shared pause loop functionality for exercise trackers.
+    
+    Args:
+        cleanup_callback: Optional function to call before exiting on 'q' key
+    
+    Returns:
+        None - function handles the pause/resume logic internally
+    """
+    while True:
+        key = cv2.waitKey(0) & 0xFF
+        if key == ord('r'):  # Resume
+            break
+        elif key == ord('q'):  # Quit
+            if cleanup_callback:
+                cleanup_callback()
+            exit()
