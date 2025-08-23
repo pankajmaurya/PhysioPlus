@@ -185,20 +185,25 @@ class ExerciseInfoRenderer:
             return (0, 255, 0)  # Default green
 
 
-def pause_loop(cleanup_callback=None):
+def pause_loop(cleanup_callback=None, wait_key_func=None):
     """Shared pause loop functionality for exercise trackers.
     
     Args:
         cleanup_callback: Optional function to call before exiting on 'q' key
+        wait_key_func: Optional function to use for waiting for a key press.
+                       Defaults to cv2.waitKey.
     
     Returns:
-        None - function handles the pause/resume logic internally
+        bool: True if the loop should quit, False otherwise.
     """
+    if wait_key_func is None:
+        wait_key_func = cv2.waitKey
+
     while True:
-        key = cv2.waitKey(0) & 0xFF
+        key = wait_key_func(0) & 0xFF
         if key == ord('r'):  # Resume
-            break
+            return False
         elif key == ord('q'):  # Quit
             if cleanup_callback:
                 cleanup_callback()
-            exit()
+            return True

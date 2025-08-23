@@ -173,7 +173,8 @@ class AnyProneSLRTracker:
                 if key == ord('q'):
                     break
                 elif key == ord('p'):
-                    pause_loop(self._cleanup)
+                    if pause_loop(self._cleanup):
+                        break
 
         self._cleanup()
         return self.count

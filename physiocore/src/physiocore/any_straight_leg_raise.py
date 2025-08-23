@@ -181,7 +181,8 @@ class AnySLRTracker:
             if key == ord('q'):
                 break
             elif key == ord('p'):
-                pause_loop(self._cleanup)
+                if pause_loop(self._cleanup):
+                    break
         self._cleanup()
 
     def _handle_pose_hold(self, frame, leg='left'):
