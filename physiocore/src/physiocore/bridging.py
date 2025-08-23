@@ -6,7 +6,7 @@ import cv2
 import mediapipe as mp
 
 from physiocore.lib import modern_flags, graphics_utils, mp_utils
-from physiocore.lib.graphics_utils import ExerciseInfoRenderer, ExerciseState
+from physiocore.lib.graphics_utils import ExerciseInfoRenderer, ExerciseState, pause_loop
 from physiocore.lib.basic_math import between, calculate_angle
 from physiocore.lib.file_utils import announceForCount, create_output_files, release_files
 from physiocore.lib.landmark_utils import calculate_angle_between_landmarks, upper_body_is_lying_down
@@ -158,7 +158,7 @@ class BridgingTracker:
                 if key == ord('q'):
                     break
                 elif key == ord('p'):
-                   self._pause_loop()
+                   pause_loop(self._cleanup)
 
         self._cleanup(display=display)
         return self.count
@@ -208,15 +208,6 @@ class BridgingTracker:
         
         self.renderer.render_complete_frame(frame, exercise_state)
 
-    def _pause_loop(self):
-        while True:
-            key = cv2.waitKey(0) & 0xFF
-            if key == ord('r'):
-                break
-            elif key == ord('q'):
-                self._cleanup()
-                exit()
-
     def _cleanup(self, display=True):
         if self.cap:
             self.cap.release()
@@ -225,6 +216,7 @@ class BridgingTracker:
         if display:
             cv2.destroyAllWindows()
         print(f"Final count: {self.count}")
+
 
 if __name__ == "__main__":
     tracker = BridgingTracker()
