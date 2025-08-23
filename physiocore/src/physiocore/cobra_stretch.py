@@ -77,7 +77,16 @@ class CobraStretchTracker:
             return {}
 
     def start(self):
+        return self.process_video(display=True)
+    
+    def process_video(self, video_path=None, display=True):
+        self.video = video_path if video_path is not None else self.video
         self.cap = cv2.VideoCapture(self.video if self.video else 0)
+        
+        if not self.cap.isOpened():
+            print(f"Error opening video stream or file: {self.video}")
+            return 0
+            
         input_fps = int(self.cap.get(cv2.CAP_PROP_FPS)) or 30
         delay = int(1000 / input_fps)
         if self.save_video:
@@ -128,19 +137,24 @@ class CobraStretchTracker:
             if self.pose_tracker.resting_pose and self.pose_tracker.raise_pose:
                 self._handle_pose_hold(frame)
             # Draw info and pose
-            self._draw_info(
-                frame, angle_left_elb, angle_right_elb, raise_angle, head_angle,
-                l_wrist_close, r_wrist_close, l_wrist_near_torse, r_wrist_near_torse,
-                lower_body_prone, feet_orien, pose_landmarks
-            )
+            if display:
+                self._draw_info(
+                    frame, angle_left_elb, angle_right_elb, raise_angle, head_angle,
+                    l_wrist_close, r_wrist_close, l_wrist_near_torse, r_wrist_near_torse,
+                    lower_body_prone, feet_orien, pose_landmarks
+                )
             if self.save_video and self.debug:
                 self.output_with_info.write(frame)
-            key = cv2.waitKey(delay) & 0xFF
-            if key == ord("q"):
-                break
-            elif key == ord("p"):
-                self._pause_loop()
+            
+            if display:
+                key = cv2.waitKey(delay) & 0xFF
+                if key == ord("q"):
+                    break
+                elif key == ord("p"):
+                    self._pause_loop()
+        
         self._cleanup()
+        return self.count
 
     def _handle_pose_hold(self, frame):
         if not self.check_timer:
