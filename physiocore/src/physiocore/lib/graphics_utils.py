@@ -70,7 +70,7 @@ class ExerciseState:
     render_all: bool = False
     exercise_name: str = "Exercise"
     debug_info: Optional[Dict[str, Any]] = None
-    pose_landmarks = None
+    pose_landmarks: Optional[Any] = None
     display: bool = True
 
 
