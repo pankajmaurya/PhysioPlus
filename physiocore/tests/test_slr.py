@@ -15,10 +15,12 @@ class TestAnySLRTracker(unittest.TestCase):
         # Get the path to the video file
         video_path = os.path.join(os.path.dirname(__file__), 'slr-mini.mp4')
         
-        count = tracker.process_video(video_path=video_path, display=display)
+        tracker.video = video_path
+        tracker.start(display=False)
+        tracker.thread.join()
         
         # Assert the count is 2
-        self.assertEqual(count, 2)
+        self.assertEqual(tracker.count, 2)
 
 if __name__ == '__main__':
     unittest.main()

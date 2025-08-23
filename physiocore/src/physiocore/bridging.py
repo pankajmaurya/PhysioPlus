@@ -96,18 +96,16 @@ class BridgingTracker:
             print("Config file not found, using default values")
             return {}
 
-    def start(self):
+    def start(self, display=True):
         self.running = True
-        self.thread = Thread(target=self.process_video)
+        self.thread = Thread(target=self.process_video, kwargs={'display': display})
         self.thread.start()
 
     def stop(self):
         self.running = False
-        if self.thread:
-            self.thread.join()
-        self._cleanup()
 
     def process_video(self, video_path=None, display=True):
+        self.running = True
         self.video = video_path if video_path is not None else self.video
         self.cap = cv2.VideoCapture(self.video if self.video else 0)
 
@@ -123,7 +121,6 @@ class BridgingTracker:
         while self.running:
             success, landmarks, frame, pose_landmarks = mp_utils.processFrameAndGetLandmarks(self.cap)
             if not success:
-                self.stop()
                 break
             if frame is None:
                 continue
@@ -168,10 +165,12 @@ class BridgingTracker:
 
                 key = cv2.waitKey(delay) & 0xFF
                 if key == ord('q'):
-                    self.stop()
+                    self.running = False
                     break
                 elif key == ord('p'):
                    self._pause_loop()
+
+        self._cleanup(display=display)
         return self.count
 
     def _handle_pose_hold(self, frame=None):
@@ -225,7 +224,7 @@ class BridgingTracker:
             if key == ord('r'):
                 break
             elif key == ord('q'):
-                self.stop()
+                self.running = False
                 break
 
     def _cleanup(self, display=True):

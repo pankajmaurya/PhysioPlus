@@ -15,12 +15,12 @@ class TestBridgingTracker(unittest.TestCase):
         video_path = os.path.join(os.path.dirname(__file__), 'bridging.mp4')
         
         # Process the video without displaying GUI
-        count = tracker.process_video(video_path=video_path, display=False)
-        # In development mode, try running with display ON too.
-        # count = tracker.process_video(video_path=video_path, display=True)
+        tracker.video = video_path
+        tracker.start(display=False)
+        tracker.thread.join()
         
         # Assert the count is 1
-        self.assertEqual(count, 1)
+        self.assertEqual(tracker.count, 1)
 
 if __name__ == '__main__':
     unittest.main()
