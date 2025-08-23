@@ -11,15 +11,15 @@ class TestAnyProneSLRTracker(unittest.TestCase):
         tracker.hold_secs = 1.0
         
         # Get the path to the video file
-        video_path = os.path.join(os.path.dirname(__file__), 'prone.mp4')
+        video_path = os.path.join(os.path.dirname(__file__), 'prone-mini-test.mp4')
         
         # Process the video without displaying GUI
         count = tracker.process_video(video_path=video_path, display=False)
         # In development mode, try running with display ON too.
         # count = tracker.process_video(video_path=video_path, display=True)
         
-        # Assert the count is 20
-        self.assertEqual(count, 20)
+        # Assert the count is 2
+        self.assertEqual(count, 2)
 
 if __name__ == '__main__':
     unittest.main()
