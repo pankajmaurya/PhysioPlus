@@ -148,7 +148,8 @@ class BridgingTracker:
             if display:
                 self._draw_info(
                     frame, lying_down, l_knee_angle, r_knee_angle, l_raise_angle, r_raise_angle,
-                    l_ankle_close, r_ankle_close, self.pose_tracker.resting_pose, self.pose_tracker.raise_pose, pose_landmarks
+                    l_ankle_close, r_ankle_close, self.pose_tracker.resting_pose, self.pose_tracker.raise_pose, 
+                    pose_landmarks, display
                 )
 
                 if self.save_video and self.debug:
@@ -167,7 +168,7 @@ class BridgingTracker:
         if not self.check_timer:
             self.old_time = time.time()
             self.check_timer = True
-            print("time for raise", self.old_time)
+            print("[Bridging] time for raise", self.old_time)
         else:
             cur_time = time.time()
             if cur_time - self.old_time > self.hold_secs:
@@ -183,7 +184,7 @@ class BridgingTracker:
                 )
 
     def _draw_info(self, frame, lying_down, l_knee_angle, r_knee_angle, l_raise_angle, r_raise_angle,
-                   l_ankle_close, r_ankle_close, resting_pose, raise_pose, pose_landmarks):
+                   l_ankle_close, r_ankle_close, resting_pose, raise_pose, pose_landmarks, display):
         """Draw exercise information using the shared renderer."""
         debug_info = None
         if self.debug:
@@ -203,7 +204,7 @@ class BridgingTracker:
             exercise_name="Bridging",
             debug_info=debug_info,
             pose_landmarks=pose_landmarks,
-            display=True
+            display=display
         )
         
         self.renderer.render_complete_frame(frame, exercise_state)
