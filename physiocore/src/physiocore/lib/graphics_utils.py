@@ -1,6 +1,7 @@
 import mediapipe as mp
 from mediapipe.python.solutions.drawing_utils import DrawingSpec
 import cv2
+import sys
 from dataclasses import dataclass
 from typing import Optional, Dict, Any
 
@@ -123,6 +124,7 @@ class ExerciseInfoRenderer:
                     2
                 )
                 y_offset += 30
+            print(f"Debug Info: {exercise_state.debug_info}", file=sys.stderr)
     
     def draw_pose_landmarks(self, frame, exercise_state: ExerciseState):
         """Draw pose landmarks on the frame.

@@ -5,7 +5,11 @@ from physiocore.any_straight_leg_raise import AnySLRTracker
 class TestAnySLRTracker(unittest.TestCase):
 
     def test_slr_video(self):
-        tracker = AnySLRTracker()
+        config = {
+            "knee_angle_min": 150,
+            "raise_pose_raise_angle_min": 90
+        }
+        tracker = AnySLRTracker(config_path=config)
         tracker.debug = True
         
         # Override HOLD_SECS for testing
@@ -15,7 +19,7 @@ class TestAnySLRTracker(unittest.TestCase):
         # Get the path to the video file
         video_path = os.path.join(os.path.dirname(__file__), 'slr-mini.mp4')
         
-        count = tracker.process_video(video_path=video_path, display=display)
+        count = tracker.process_video(video_path=video_path, display=False)
         
         # Assert the count is 2
         self.assertEqual(count, 2)

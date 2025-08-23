@@ -83,7 +83,10 @@ class PoseTracker:
 class AnySLRTracker:
     def __init__(self, config_path=None):
         self.debug, self.video, self.render_all, self.save_video, self.lenient_mode = modern_flags.parse_flags()
-        self.config = self._load_config(config_path or self._default_config_path())
+        if isinstance(config_path, dict):
+            self.config = config_path
+        else:
+            self.config = self._load_config(config_path or self._default_config_path())
         self.hold_secs = self.config.get("HOLD_SECS", 3)
         self.multiplyer = self.config.get("multiplyer", 1.0)
         if self.video:
@@ -113,7 +116,7 @@ class AnySLRTracker:
             return {}
 
     def start(self):
-        return self.process_video(display=True)
+        return self.process_video(display=self.display)
     
     def process_video(self, video_path=None, display=True):
         self.video = video_path if video_path is not None else self.video
@@ -181,7 +184,7 @@ class AnySLRTracker:
             self._draw_info(
                 frame, lying_down, l_knee_angle, r_knee_angle, l_raise_angle, r_raise_angle,
                 l_ankle_close, r_ankle_close, self.pose_tracker.l_rest_pose, self.pose_tracker.r_rest_pose,
-                self.pose_tracker.l_raise_pose, self.pose_tracker.r_raise_pose, pose_landmarks)
+                self.pose_tracker.l_raise_pose, self.pose_tracker.r_raise_pose, pose_landmarks, display=display)
 
             if self.save_video:
                 self.output_with_info.write(frame)
@@ -192,6 +195,8 @@ class AnySLRTracker:
                     break
                 elif key == ord('p'):
                     self._pause_loop()
+            else: # if display is false, we need to add a small delay
+                time.sleep(delay / 1000)
         
         self._cleanup()
         return self.count
@@ -232,7 +237,7 @@ class AnySLRTracker:
                     )
 
     def _draw_info(self, frame, lying_down, l_knee_angle, r_knee_angle, l_raise_angle, r_raise_angle,
-                   l_ankle_close, r_ankle_close, l_resting, r_resting, l_raise, r_raise, pose_landmarks):
+                   l_ankle_close, r_ankle_close, l_resting, r_resting, l_raise, r_raise, pose_landmarks, display=True):
         """Draw exercise information using the shared renderer."""
         debug_info = None
         if self.debug:
@@ -252,7 +257,7 @@ class AnySLRTracker:
             exercise_name="Any SLR",
             debug_info=debug_info,
             pose_landmarks=pose_landmarks,
-            display=True
+            display=display
         )
         
         self.renderer.render_complete_frame(frame, exercise_state)
