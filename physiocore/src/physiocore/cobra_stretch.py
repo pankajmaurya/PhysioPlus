@@ -6,6 +6,7 @@ import cv2
 import mediapipe as mp
 
 from physiocore.lib import modern_flags, graphics_utils, mp_utils
+from physiocore.lib.graphics_utils import ExerciseInfoRenderer, ExerciseState
 from physiocore.lib.basic_math import between, calculate_angle, calculate_mid_point
 from physiocore.lib.file_utils import announceForCount, create_output_files, release_files
 from physiocore.lib.landmark_utils import calculate_angle_between_landmarks, lower_body_on_ground, detect_feet_orientation
@@ -60,6 +61,7 @@ class CobraStretchTracker:
         self.cap = None
         self.output = None
         self.output_with_info = None
+        self.renderer = ExerciseInfoRenderer()
 
     def _default_config_path(self):
         script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -163,29 +165,32 @@ class CobraStretchTracker:
     def _draw_info(self, frame, angle_left_elb, angle_right_elb, raise_angle, head_angle,
                    l_wrist_close, r_wrist_close, l_wrist_near_torse, r_wrist_near_torse,
                    lower_body_prone, feet_orien, pose_landmarks):
-        cv2.putText(frame, f"Count: {self.count}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+        """Draw exercise information using the shared renderer."""
+        debug_info = None
         if self.debug:
-            cv2.putText(frame, f'Resting Pose: {self.pose_tracker.resting_pose}', (10, 110), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,0), 2)
-            cv2.putText(frame, f'Raise Pose: {self.pose_tracker.raise_pose}', (10, 140), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,0), 2)
-            cv2.putText(frame, f'lowerbody grounded: {lower_body_prone}', (10, 170), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,0), 2)
-            cv2.putText(frame, f'elbow angle(L,R): {angle_left_elb:.2f}, {angle_right_elb:.2f}', (10, 200), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,0), 2)
-            cv2.putText(frame, f'wrist close: {l_wrist_close and r_wrist_close}', (10, 230), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,0), 2)
-            cv2.putText(frame, f'wrist near torse: {l_wrist_near_torse and r_wrist_near_torse}', (10, 260), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,0), 2)
-            cv2.putText(frame, f'head angle: {head_angle:.2f}', (10, 290), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,0), 2)
-            cv2.putText(frame, f'raise angle: {raise_angle:.2f}', (10, 320), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,0), 2)
-            cv2.putText(frame, f'feet orientation: {feet_orien}', (10, 350), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,0), 2)
-        if self.render_all:
-            custom_connections, custom_style, connection_spec = graphics_utils.get_default_drawing_specs("all")
-        else:
-            custom_connections, custom_style, connection_spec = graphics_utils.get_default_drawing_specs("")
-        mp_drawing.draw_landmarks(
-            frame, pose_landmarks,
-            connections=custom_connections,
-            connection_drawing_spec=connection_spec,
-            landmark_drawing_spec=custom_style,
+            debug_info = {
+                'Resting Pose': self.pose_tracker.resting_pose,
+                'Raise Pose': self.pose_tracker.raise_pose,
+                'lowerbody grounded': lower_body_prone,
+                'elbow angle(L,R)': (angle_left_elb, angle_right_elb),
+                'wrist close': l_wrist_close and r_wrist_close,
+                'wrist near torse': l_wrist_near_torse and r_wrist_near_torse,
+                'head angle': head_angle,
+                'raise angle': raise_angle,
+                'feet orientation': feet_orien
+            }
+        
+        exercise_state = ExerciseState(
+            count=self.count,
+            debug=self.debug,
+            render_all=self.render_all,
+            exercise_name="Cobra Stretch",
+            debug_info=debug_info,
+            pose_landmarks=pose_landmarks,
+            display=True
         )
-        cv2.namedWindow("Cobra Stretch Exercise", cv2.WINDOW_NORMAL)
-        cv2.imshow("Cobra Stretch Exercise", frame)
+        
+        self.renderer.render_complete_frame(frame, exercise_state)
 
     def _pause_loop(self):
         while True:

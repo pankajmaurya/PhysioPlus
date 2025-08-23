@@ -6,6 +6,7 @@ import cv2
 import mediapipe as mp
 
 from physiocore.lib import modern_flags, graphics_utils
+from physiocore.lib.graphics_utils import ExerciseInfoRenderer, ExerciseState
 from physiocore.lib.basic_math import between, calculate_mid_point, calculate_signed_angle
 from physiocore.lib.file_utils import announceForCount, create_output_files, release_files
 from physiocore.lib.landmark_utils import calculate_angle_between_landmarks, upper_body_is_lying_down
@@ -96,6 +97,7 @@ class AnySLRTracker:
         self.cap = None
         self.output = None
         self.output_with_info = None
+        self.renderer = ExerciseInfoRenderer()
 
     def _default_config_path(self):
         script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -219,27 +221,29 @@ class AnySLRTracker:
 
     def _draw_info(self, frame, lying_down, l_knee_angle, r_knee_angle, l_raise_angle, r_raise_angle,
                    l_ankle_close, r_ankle_close, l_resting, r_resting, l_raise, r_raise, pose_landmarks):
-        cv2.putText(frame, f'Count: {self.count}', (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+        """Draw exercise information using the shared renderer."""
+        debug_info = None
         if self.debug:
-            cv2.putText(frame, f'Lying Down: {lying_down}', (10, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,0),2)
-            cv2.putText(frame, f'Resting Pose: {l_resting}, {r_resting}', (10, 110), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,0),2)
-            cv2.putText(frame, f'Raise Pose: {l_raise}, {r_raise}', (10, 140), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,0),2)
-            cv2.putText(frame, f'Ankle floored: {l_ankle_close}, {r_ankle_close}', (10, 170), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,0),2)
-            cv2.putText(frame, f'Knee Angles: {l_knee_angle:.2f}, {r_knee_angle:.2f}', (10, 200), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,255),2)
-            cv2.putText(frame, f'Raise angle: {l_raise_angle:.2f}, {r_raise_angle:.2f}', (10, 230), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,255),2)
-        if self.render_all:
-            custom_connections, custom_style, connection_spec = graphics_utils.get_default_drawing_specs("all")
-        else:
-            custom_connections, custom_style, connection_spec = graphics_utils.get_default_drawing_specs("")
-        mp_drawing.draw_landmarks(
-            frame,
-            pose_landmarks,
-            connections=custom_connections,
-            connection_drawing_spec=connection_spec,
-            landmark_drawing_spec=custom_style,
+            debug_info = {
+                'Lying Down': lying_down,
+                'Resting Pose': f'{l_resting}, {r_resting}',
+                'Raise Pose': f'{l_raise}, {r_raise}',
+                'Ankle floored': f'{l_ankle_close}, {r_ankle_close}',
+                'Knee Angles': (l_knee_angle, r_knee_angle),
+                'Raise angle': (l_raise_angle, r_raise_angle)
+            }
+        
+        exercise_state = ExerciseState(
+            count=self.count,
+            debug=self.debug,
+            render_all=self.render_all,
+            exercise_name="Any SLR",
+            debug_info=debug_info,
+            pose_landmarks=pose_landmarks,
+            display=True
         )
-        cv2.namedWindow("Any SLR Exercise", cv2.WINDOW_NORMAL)
-        cv2.imshow("Any SLR Exercise", frame)
+        
+        self.renderer.render_complete_frame(frame, exercise_state)
 
     def _pause_loop(self):
         while True:
