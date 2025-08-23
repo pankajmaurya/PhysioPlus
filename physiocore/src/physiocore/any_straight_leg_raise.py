@@ -116,8 +116,11 @@ class AnySLRTracker:
 
     def start(self, display=True):
         self.running = True
-        self.thread = Thread(target=self.process_video, kwargs={'display': display})
-        self.thread.start()
+        if display:
+            self.process_video(display=True)
+        else:
+            self.thread = Thread(target=self.process_video, kwargs={'display': False})
+            self.thread.start()
 
     def stop(self):
         self.running = False

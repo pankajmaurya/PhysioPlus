@@ -186,8 +186,11 @@ class AnyProneSLRTracker:
 
     def start(self, display=True):
         self.running = True
-        self.thread = Thread(target=self.process_video, args=(self.video if self.video else 0, display))
-        self.thread.start()
+        if display:
+            self.process_video(self.video if self.video else 0, display=True)
+        else:
+            self.thread = Thread(target=self.process_video, args=(self.video if self.video else 0, False))
+            self.thread.start()
 
     def stop(self):
         self.running = False

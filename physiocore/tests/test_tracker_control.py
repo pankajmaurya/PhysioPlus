@@ -1,5 +1,6 @@
 import unittest
 import time
+import os
 from physiocore.ankle_toe_movement import AnkleToeMovementTracker
 from physiocore.bridging import BridgingTracker
 from physiocore.cobra_stretch import CobraStretchTracker
@@ -25,19 +26,24 @@ class TestTrackerControl(unittest.TestCase):
         self.assertFalse(tracker.running)
 
     def test_ankle_toe_movement_tracker_control(self):
-        self._test_tracker(AnkleToeMovementTracker, 'physiocore/tests/ankletoe.mp4')
+        video_path = os.path.join(os.path.dirname(__file__), 'ankletoe.mp4')
+        self._test_tracker(AnkleToeMovementTracker, video_path)
 
     def test_bridging_tracker_control(self):
-        self._test_tracker(BridgingTracker, 'physiocore/tests/bridging.mp4')
+        video_path = os.path.join(os.path.dirname(__file__), 'bridging.mp4')
+        self._test_tracker(BridgingTracker, video_path)
 
     def test_cobra_stretch_tracker_control(self):
-        self._test_tracker(CobraStretchTracker, 'physiocore/tests/cobra-mini.mp4')
+        video_path = os.path.join(os.path.dirname(__file__), 'cobra-mini.mp4')
+        self._test_tracker(CobraStretchTracker, video_path)
 
     def test_any_slr_tracker_control(self):
-        self._test_tracker(AnySLRTracker, 'physiocore/tests/slr-mini.mp4')
+        video_path = os.path.join(os.path.dirname(__file__), 'slr-mini.mp4')
+        self._test_tracker(AnySLRTracker, video_path)
 
     def test_any_prone_slr_tracker_control(self):
-        self._test_tracker(AnyProneSLRTracker, 'physiocore/tests/prone-mini-test.mp4')
+        video_path = os.path.join(os.path.dirname(__file__), 'prone-mini-test.mp4')
+        self._test_tracker(AnyProneSLRTracker, video_path)
 
 if __name__ == '__main__':
     unittest.main()
