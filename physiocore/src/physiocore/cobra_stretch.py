@@ -141,7 +141,7 @@ class CobraStretchTracker:
                 self._draw_info(
                     frame, angle_left_elb, angle_right_elb, raise_angle, head_angle,
                     l_wrist_close, r_wrist_close, l_wrist_near_torse, r_wrist_near_torse,
-                    lower_body_prone, feet_orien, pose_landmarks
+                    lower_body_prone, feet_orien, pose_landmarks, display
                 )
             if self.save_video and self.debug:
                 self.output_with_info.write(frame)
@@ -160,7 +160,7 @@ class CobraStretchTracker:
         if not self.check_timer:
             self.start_time = time.time()
             self.check_timer = True
-            print("time for raise", self.start_time)
+            print("[Cobra] time for raise", self.start_time)
         else:
             cur_time = time.time()
             if cur_time - self.start_time > self.hold_secs:
@@ -178,7 +178,7 @@ class CobraStretchTracker:
 
     def _draw_info(self, frame, angle_left_elb, angle_right_elb, raise_angle, head_angle,
                    l_wrist_close, r_wrist_close, l_wrist_near_torse, r_wrist_near_torse,
-                   lower_body_prone, feet_orien, pose_landmarks):
+                   lower_body_prone, feet_orien, pose_landmarks, display):
         """Draw exercise information using the shared renderer."""
         debug_info = None
         if self.debug:
@@ -201,7 +201,7 @@ class CobraStretchTracker:
             exercise_name="Cobra Stretch",
             debug_info=debug_info,
             pose_landmarks=pose_landmarks,
-            display=True
+            display=display
         )
         
         self.renderer.render_complete_frame(frame, exercise_state)

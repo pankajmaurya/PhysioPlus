@@ -21,11 +21,11 @@ class PoseTracker:
         self.r_rest_pose = False
         self.l_raise_pose = False
         self.r_raise_pose = False
-        self.knee_min = config.get('knee_angle_min', 155)
+        self.knee_min = config.get('knee_angle_min', 150)
         self.knee_max = config.get('knee_angle_max', 180)
         self.rest_raise_min = config.get('rest_pose_raise_angle_min', 160)
         self.rest_raise_max = config.get('rest_pose_raise_angle_max', 180)
-        self.raise_min = config.get('raise_pose_raise_angle_min', 100)
+        self.raise_min = config.get('raise_pose_raise_angle_min', 90)
         self.raise_max = config.get('raise_pose_raise_angle_max', 160)
         self.lenient_mode = lenient_mode
 
@@ -181,7 +181,7 @@ class AnySLRTracker:
             self._draw_info(
                 frame, lying_down, l_knee_angle, r_knee_angle, l_raise_angle, r_raise_angle,
                 l_ankle_close, r_ankle_close, self.pose_tracker.l_rest_pose, self.pose_tracker.r_rest_pose,
-                self.pose_tracker.l_raise_pose, self.pose_tracker.r_raise_pose, pose_landmarks)
+                self.pose_tracker.l_raise_pose, self.pose_tracker.r_raise_pose, pose_landmarks, display)
 
             if self.save_video:
                 self.output_with_info.write(frame)
@@ -202,7 +202,7 @@ class AnySLRTracker:
             if not self.l_check_timer:
                 self.l_time = now
                 self.l_check_timer = True
-                print("time for left raise", self.l_time)
+                print("[Any SLR] time for left raise", self.l_time)
             else:
                 if now - self.l_time > self.hold_secs:
                     self.count += 1
@@ -218,7 +218,7 @@ class AnySLRTracker:
             if not self.r_check_timer:
                 self.r_time = now
                 self.r_check_timer = True
-                print("time for right raise", self.r_time)
+                print("[Any SLR] time for right raise", self.r_time)
             else:
                 if now - self.r_time > self.hold_secs:
                     self.count += 1
@@ -232,7 +232,7 @@ class AnySLRTracker:
                     )
 
     def _draw_info(self, frame, lying_down, l_knee_angle, r_knee_angle, l_raise_angle, r_raise_angle,
-                   l_ankle_close, r_ankle_close, l_resting, r_resting, l_raise, r_raise, pose_landmarks):
+                   l_ankle_close, r_ankle_close, l_resting, r_resting, l_raise, r_raise, pose_landmarks, display):
         """Draw exercise information using the shared renderer."""
         debug_info = None
         if self.debug:
@@ -252,7 +252,7 @@ class AnySLRTracker:
             exercise_name="Any SLR",
             debug_info=debug_info,
             pose_landmarks=pose_landmarks,
-            display=True
+            display=display
         )
         
         self.renderer.render_complete_frame(frame, exercise_state)

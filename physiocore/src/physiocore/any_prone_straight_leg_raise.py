@@ -187,6 +187,7 @@ class AnyProneSLRTracker:
             if not self.l_check_timer:
                 self.l_time = now
                 self.l_check_timer = True
+                print("[AnyProne] time for raise for left leg ", self.l_time)
             else:
                 if now - self.l_time > self.hold_secs:
                     self.count += 1
@@ -200,6 +201,7 @@ class AnyProneSLRTracker:
             if not self.r_check_timer:
                 self.r_time = now
                 self.r_check_timer = True
+                print("[AnyProne] time for raise for right leg ", self.r_time)
             else:
                 if now - self.r_time > self.hold_secs:
                     self.count += 1

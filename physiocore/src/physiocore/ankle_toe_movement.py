@@ -128,7 +128,7 @@ class AnkleToeMovementTracker:
             if self.pose_tracker.relax_pose and self.pose_tracker.stretch_pose:
                 self._handle_pose_hold(frame)
 
-            self._draw_info(frame, l_angle, r_angle, lower_body_grounded, pose_landmarks)
+            self._draw_info(frame, l_angle, r_angle, lower_body_grounded, pose_landmarks, display)
 
             if display:
                 cv2.imshow("Ankle Toe Movement Exercise", frame)
@@ -150,7 +150,7 @@ class AnkleToeMovementTracker:
         if not self.check_timer:
             self.old_time = time.time()
             self.check_timer = True
-            print("time for raise", self.old_time)
+            print("[AnkleToe] time for raise", self.old_time)
         else:
             cur_time = time.time()
             if cur_time - self.old_time > self.hold_secs:
@@ -169,7 +169,7 @@ class AnkleToeMovementTracker:
                     2,
                 )
 
-    def _draw_info(self, frame, l_angle, r_angle, lower_body_grounded, pose_landmarks):
+    def _draw_info(self, frame, l_angle, r_angle, lower_body_grounded, pose_landmarks, display):
         """Draw exercise information using the shared renderer."""
         debug_info = None
         if self.debug:
@@ -187,7 +187,7 @@ class AnkleToeMovementTracker:
             exercise_name="Ankle Toe Movement",
             debug_info=debug_info,
             pose_landmarks=pose_landmarks,
-            display=True
+            display=display
         )
         
         self.renderer.render_complete_frame(frame, exercise_state)
