@@ -2,21 +2,18 @@ import unittest
 import os
 from physiocore.cobra_stretch import CobraStretchTracker
 
-class CobraStretchTracker(unittest.TestCase):
+class TestCobraStretchTracker(unittest.TestCase):
 
     def test_cobra_video(self):
         tracker = CobraStretchTracker()
-        
+        display = False 
         # Override HOLD_SECS
-        # tracker.hold_secs = 1.0
+        tracker.hold_secs = 0.1 if not display else 1.0
         
         # Get the path to the video file
         video_path = os.path.join(os.path.dirname(__file__), 'cobra-mini.mp4')
         
-        # Process the video without displaying GUI
-        count = tracker.process_video(video_path=video_path, display=False)
-        # In development mode, try running with display ON too.
-        # count = tracker.process_video(video_path=video_path, display=True)
+        count = tracker.process_video(video_path=video_path, display=display)
         
         # Assert the count is 3
         self.assertEqual(count, 3)
