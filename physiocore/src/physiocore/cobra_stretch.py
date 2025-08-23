@@ -209,6 +209,72 @@ class CobraStretchTracker:
         cv2.destroyAllWindows()
         print(f"Final count: {self.count}")
 
+    def process_video(self, video_path, display=False):
+        self.cap = cv2.VideoCapture(video_path)
+        input_fps = int(self.cap.get(cv2.CAP_PROP_FPS)) or 30
+        delay = int(1000 / input_fps)
+
+        while True:
+            success, landmarks, frame, pose_landmarks = mp_utils.processFrameAndGetLandmarks(self.cap)
+            if not success:
+                break
+            if frame is None:
+                continue
+
+            if not pose_landmarks:
+                continue
+
+            ground_level, on_ground = lower_body_on_ground(landmarks)
+            # Landmark extraction as per your original logic
+            lhip, rhip = landmarks[mp_pose.PoseLandmark.LEFT_HIP.value], landmarks[mp_pose.PoseLandmark.RIGHT_HIP.value]
+            lshoulder, rshoulder = landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value], landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value]
+            lwrist, rwrist = landmarks[mp_pose.PoseLandmark.LEFT_WRIST.value], landmarks[mp_pose.PoseLandmark.RIGHT_WRIST.value]
+            lelbow, relbow = landmarks[mp_pose.PoseLandmark.LEFT_ELBOW.value], landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value]
+            lknee, rknee = landmarks[mp_pose.PoseLandmark.LEFT_KNEE.value], landmarks[mp_pose.PoseLandmark.RIGHT_KNEE.value]
+            nose = landmarks[mp_pose.PoseLandmark.NOSE.value]
+            angle_left_elb = calculate_angle_between_landmarks(lshoulder, lelbow, lwrist)
+            angle_right_elb = calculate_angle_between_landmarks(rshoulder, relbow, rwrist)
+            shoulder_mid = calculate_mid_point((lshoulder.x, lshoulder.y), (rshoulder.x, rshoulder.y))
+            hip_mid = calculate_mid_point((lhip.x, lhip.y), (rhip.x, rhip.y))
+            wrist_mid = calculate_mid_point((lwrist.x, lwrist.y), (rwrist.x, rwrist.y))
+            nose_coords = (nose.x, nose.y)
+            knee = lknee if (lknee.visibility > rknee.visibility) else rknee
+            raise_angle = calculate_angle(shoulder_mid, hip_mid, (knee.x, knee.y))
+            head_angle = calculate_angle(nose_coords, shoulder_mid, wrist_mid)
+            r_wrist_close = abs(ground_level - rwrist.y) < 0.1
+            l_wrist_close = abs(ground_level - lwrist.y) < 0.1
+            r_wrist_near_torse = between(lshoulder.x, lwrist.x, lhip.x)
+            l_wrist_near_torse = between(rshoulder.x, rwrist.x, rhip.x)
+            feet_orien = detect_feet_orientation(landmarks)
+            lower_body_prone = on_ground and (feet_orien == "Feet are downwards" or feet_orien == "either feet is downward")
+            # Update tracker
+            self.pose_tracker.update(
+                angle_left_elb, angle_right_elb, raise_angle,
+                l_wrist_close and r_wrist_close,
+                l_wrist_near_torse and r_wrist_near_torse,
+                head_angle, lower_body_prone
+            )
+            # Timer logic
+            if self.pose_tracker.resting_pose and not self.pose_tracker.raise_pose:
+                self.check_timer = False
+            if self.pose_tracker.resting_pose and self.pose_tracker.raise_pose:
+                self._handle_pose_hold(frame)
+
+            if display:
+                # Draw info and pose
+                self._draw_info(
+                    frame, angle_left_elb, angle_right_elb, raise_angle, head_angle,
+                    l_wrist_close, r_wrist_close, l_wrist_near_torse, r_wrist_near_torse,
+                    lower_body_prone, feet_orien, pose_landmarks
+                )
+
+                key = cv2.waitKey(delay) & 0xFF
+                if key == ord("q"):
+                    break
+
+        self._cleanup()
+        return self.count
+
 if __name__ == "__main__":
     tracker = CobraStretchTracker()
     tracker.start()

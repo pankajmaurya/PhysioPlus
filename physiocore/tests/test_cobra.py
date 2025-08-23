@@ -1,8 +1,14 @@
 import unittest
 import os
+import sys
+
+# Add the src directory to the Python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
+
 from physiocore.cobra_stretch import CobraStretchTracker
 
-class CobraStretchTracker(unittest.TestCase):
+
+class TestCobraStretchTracker(unittest.TestCase):
 
     def test_cobra_video(self):
         tracker = CobraStretchTracker()
@@ -10,6 +16,9 @@ class CobraStretchTracker(unittest.TestCase):
         # Override HOLD_SECS
         # tracker.hold_secs = 1.0
         
+        # Override HOLD_SECS
+        # tracker.hold_secs = 1.0
+
         # Get the path to the video file
         video_path = os.path.join(os.path.dirname(__file__), 'cobra-mini.mp4')
         
