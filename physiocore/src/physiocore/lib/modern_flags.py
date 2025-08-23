@@ -75,6 +75,11 @@ def parse_config() -> Config:
     
     if _cached_config is not None:
         return _cached_config
+
+    # If running under unittest, don't parse args, return default config
+    if 'unittest' in sys.modules:
+        _cached_config = Config()
+        return _cached_config
     
     parser = _create_parser()
     args = parser.parse_args()

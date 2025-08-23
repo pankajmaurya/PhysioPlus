@@ -98,6 +98,8 @@ class AnySLRTracker:
         self.output = None
         self.output_with_info = None
         self.renderer = ExerciseInfoRenderer()
+        self.running = False
+        self.thread = None
 
     def _default_config_path(self):
         script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -112,10 +114,19 @@ class AnySLRTracker:
             print("Config file not found, using default values")
             return {}
 
-    def start(self):
-        return self.process_video(display=True)
-    
+    def start(self, display=True):
+        self.running = True
+        if display:
+            self.process_video(display=True)
+        else:
+            self.thread = Thread(target=self.process_video, kwargs={'display': False})
+            self.thread.start()
+
+    def stop(self):
+        self.running = False
+
     def process_video(self, video_path=None, display=True):
+        self.running = True
         self.video = video_path if video_path is not None else self.video
         self.cap = cv2.VideoCapture(self.video if self.video else 0)
         
@@ -128,7 +139,7 @@ class AnySLRTracker:
         if self.save_video:
             self.output, self.output_with_info = create_output_files(self.cap, self.save_video)
 
-        while True:
+        while self.running:
             success, landmarks, frame, pose_landmarks = processFrameAndGetLandmarks(self.cap, pose2)
             if not success:
                 break
@@ -189,10 +200,11 @@ class AnySLRTracker:
             if display:
                 key = cv2.waitKey(delay) & 0xFF
                 if key == ord('q'):
+                    self.running = False
                     break
                 elif key == ord('p'):
                     self._pause_loop()
-        
+
         self._cleanup()
         return self.count
 
@@ -263,8 +275,8 @@ class AnySLRTracker:
             if key == ord("r"):
                 break
             elif key == ord("q"):
-                self._cleanup()
-                exit()
+                self.running = False
+                break
 
     def _cleanup(self):
         if self.cap:
