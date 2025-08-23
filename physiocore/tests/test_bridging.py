@@ -8,6 +8,7 @@ class TestBridgingTracker(unittest.TestCase):
         tracker = BridgingTracker()
         
         # Override HOLD_SECS
+        # TODO: Investigate why override needed with display off mode
         tracker.hold_secs = 0.1
         
         # Get the path to the video file
