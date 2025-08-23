@@ -82,7 +82,16 @@ class AnkleToeMovementTracker:
             return {}
 
     def start(self):
+        return self.process_video(display=True)
+    
+    def process_video(self, video_path=None, display=True):
+        self.video = video_path if video_path is not None else self.video
         self.cap = cv2.VideoCapture(self.video if self.video else 0)
+        
+        if not self.cap.isOpened():
+            print(f"Error opening video stream or file: {self.video}")
+            return 0
+            
         input_fps = int(self.cap.get(cv2.CAP_PROP_FPS)) or 30
         delay = int(1000 / input_fps)
 
@@ -121,17 +130,21 @@ class AnkleToeMovementTracker:
 
             self._draw_info(frame, l_angle, r_angle, lower_body_grounded, pose_landmarks)
 
-            cv2.imshow("Ankle Toe Movement Exercise", frame)
+            if display:
+                cv2.imshow("Ankle Toe Movement Exercise", frame)
+            
             if self.save_video and self.debug:
                 self.output_with_info.write(frame)
 
-            key = cv2.waitKey(delay) & 0xFF
-            if key == ord("q"):
-                break
-            elif key == ord("p"):
-                self._pause_loop()
+            if display:
+                key = cv2.waitKey(delay) & 0xFF
+                if key == ord("q"):
+                    break
+                elif key == ord("p"):
+                    self.pause_loop()
 
         self._cleanup()
+        return self.count
 
     def _handle_pose_hold(self, frame):
         if not self.check_timer:
