@@ -140,6 +140,7 @@ class AnyProneSLRTracker:
             rknee_high = rheel.y < rshld.y
 
             prone_lying = lying_down and (feet_orien == "Feet are downwards" or feet_orien == "either feet is downward")
+            # print(f'feet are {feet_orien}')
 
             self.pose_tracker.update(prone_lying,
                                     l_knee_angle, r_knee_angle, l_ankle_close, r_ankle_close,
