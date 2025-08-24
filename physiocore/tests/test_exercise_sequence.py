@@ -1,6 +1,7 @@
 import sys
 import time
 from physiocore.tracker import create_tracker, _TRACKERS
+from physiocore.lib.file_utils import play_welcome_sound_blocking
 
 # Try to import pygame to check if sound is playing
 try:
@@ -35,7 +36,17 @@ def run_exercise_sequence():
     Runs a sequence of exercises, 10 repetitions each.
     """
     exercise_list = list(_TRACKERS.keys())
-    print(f"Starting exercise sequence: {exercise_list}")
+    
+    # Play welcome sound at the beginning of the sequence
+    print("🎵 Welcome to PhysioPlus Exercise Sequence!")
+    try:
+        play_welcome_sound_blocking()
+        print("Starting exercise sequence...")
+    except Exception as e:
+        print(f"Welcome sound error: {e}")
+        print("Starting exercise sequence...")
+    
+    print(f"Exercise sequence: {exercise_list}")
 
     for i, exercise in enumerate(exercise_list):
         print(f"--- Starting exercise: {exercise} ---")

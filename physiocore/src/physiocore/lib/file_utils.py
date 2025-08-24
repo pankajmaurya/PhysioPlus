@@ -1,7 +1,7 @@
 from threading import Thread
 import cv2
 from .platform_utils import save_video_codec
-from .sound_utils import play_count_sound, play_session_complete_sound, play_session_complete_sound_blocking
+from .sound_utils import play_count_sound, play_session_complete_sound, play_session_complete_sound_blocking, play_welcome_sound_blocking
 
 import os
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "1"
@@ -138,3 +138,17 @@ def play_session_complete_sound_blocking(language="english", enabled=True):
         play_complete_blocking(language=language, enabled=enabled)
     except Exception as e:
         print(f"Error playing session complete sound: {e}")
+
+def play_welcome_sound_blocking(language="english", enabled=True):
+    """
+    Play welcome sound (blocking until complete).
+    
+    Args:
+        language: Language preference (english/indian)
+        enabled: Whether sound is enabled
+    """
+    try:
+        from .sound_utils import play_welcome_sound_blocking as play_welcome_blocking
+        play_welcome_blocking(language=language, enabled=enabled)
+    except Exception as e:
+        print(f"Error playing welcome sound: {e}")

@@ -181,6 +181,10 @@ class SoundManager:
         """Play welcome sound"""
         self._play_common_sound(SoundEvent.WELCOME)
     
+    def play_welcome_blocking(self) -> None:
+        """Play welcome sound (blocking until complete)"""
+        self._play_common_sound_blocking(SoundEvent.WELCOME)
+    
     def play_count_sound(self, count: int) -> None:
         """
         Play appropriate sound based on count milestones.
@@ -304,6 +308,11 @@ def play_welcome_sound(language: str = "english", enabled: bool = True) -> None:
     """Play welcome sound"""
     sound_manager = get_sound_manager(language=language, enabled=enabled)
     sound_manager.play_welcome()
+
+def play_welcome_sound_blocking(language: str = "english", enabled: bool = True) -> None:
+    """Play welcome sound (blocking until complete)"""
+    sound_manager = get_sound_manager(language=language, enabled=enabled)
+    sound_manager.play_welcome_blocking()
 
 def play_encouragement_sound(language: str = "english", enabled: bool = True) -> None:
     """Play encouragement sound"""
