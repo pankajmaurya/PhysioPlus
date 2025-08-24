@@ -8,7 +8,7 @@ import mediapipe as mp
 from physiocore.lib import modern_flags, graphics_utils, mp_utils
 from physiocore.lib.graphics_utils import ExerciseInfoRenderer, ExerciseState
 from physiocore.lib.basic_math import between, calculate_angle
-from physiocore.lib.file_utils import announceForCount, create_output_files, release_files
+from physiocore.lib.file_utils import announceForCount, create_output_files, release_files, play_exercise_start_sound, play_session_complete_sound
 from physiocore.lib.landmark_utils import calculate_angle_between_landmarks, upper_body_is_lying_down
 
 mp_drawing = mp.solutions.drawing_utils
@@ -69,7 +69,15 @@ class PoseTracker:
 
 class BridgingTracker:
     def __init__(self, config_path=None, reps=None):
-        self.debug, self.video, self.render_all, self.save_video, self.lenient_mode = modern_flags.parse_flags()
+        self.config_obj = modern_flags.parse_config()
+        self.debug = self.config_obj.debug
+        self.video = self.config_obj.video
+        self.render_all = self.config_obj.render_all
+        self.save_video = self.config_obj.save_video
+        self.lenient_mode = self.config_obj.lenient_mode
+        self.sound_enabled = self.config_obj.sound_enabled
+        self.sound_language = self.config_obj.sound_language
+        
         self.config = self._load_config(config_path or self._default_config_path())
         self.hold_secs = self.config.get("HOLD_SECS", 5)
         self.reps = reps
@@ -81,6 +89,7 @@ class BridgingTracker:
         self.output = None
         self.output_with_info = None
         self.renderer = ExerciseInfoRenderer()
+        self.session_started = False
 
     def _default_config_path(self):
         script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -96,7 +105,7 @@ class BridgingTracker:
             return {}
 
     def start(self):
-        self.process_video()
+        return self.process_video()
 
     def process_video(self, video_path=None, display=True):
         self.video = video_path if video_path is not None else self.video
@@ -110,6 +119,11 @@ class BridgingTracker:
         delay = int(1000 / input_fps)
         if self.save_video:
             self.output, self.output_with_info = create_output_files(self.cap, self.save_video)
+
+        # Play exercise start sound once
+        if not self.session_started and self.sound_enabled:
+            play_exercise_start_sound("bridging", language=self.sound_language, enabled=self.sound_enabled)
+            self.session_started = True
 
         while True:
             success, landmarks, frame, pose_landmarks = mp_utils.processFrameAndGetLandmarks(self.cap)
@@ -165,6 +179,11 @@ class BridgingTracker:
                    self._pause_loop()
 
         self._cleanup(display=display)
+        
+        # Play session complete sound
+        if self.count > 0 and self.sound_enabled:
+            play_session_complete_sound(language=self.sound_language, enabled=self.sound_enabled)
+            
         return self.count
 
     def _handle_pose_hold(self, frame=None):
@@ -178,7 +197,7 @@ class BridgingTracker:
                 self.count += 1
                 self.pose_tracker.reset()
                 self.check_timer = False
-                announceForCount(self.count)
+                announceForCount(self.count, language=self.sound_language, enabled=self.sound_enabled)
             elif frame is not None:
                 cv2.putText(
                     frame,
