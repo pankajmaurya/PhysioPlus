@@ -47,9 +47,10 @@ class PoseTracker:
 
 
 class AnkleToeMovementTracker:
-    def __init__(self, config_path=None):
+    def __init__(self, config_path=None, reps=None):
         self.debug, self.video, self.render_all, self.save_video, self.lenient_mode = modern_flags.parse_flags()
         self.config = self._load_config(config_path or self._default_config_path())
+        self.reps = reps
 
         self.relax_min = self.config.get("relax_ankle_angle_min", 80)
         self.relax_max = self.config.get("relax_ankle_angle_max", 110)
@@ -137,6 +138,8 @@ class AnkleToeMovementTracker:
                 self.output_with_info.write(frame)
 
             if display:
+                if self.reps and self.count >= self.reps:
+                    break
                 key = cv2.waitKey(delay) & 0xFF
                 if key == ord("q"):
                     break

@@ -13,13 +13,14 @@ _TRACKERS = {
 }
 
 
-def create_tracker(exercise_name, config_path=None):
+def create_tracker(exercise_name, config_path=None, reps=None):
     """
     Factory function to create an exercise tracker.
 
     Args:
         exercise_name (str): The name of the exercise to track.
         config_path (str, optional): Path to a custom configuration file. Defaults to None.
+        reps (int, optional): Number of reps to perform, None for continuous.
 
     Returns:
         An instance of the specified exercise tracker.
@@ -29,6 +30,6 @@ def create_tracker(exercise_name, config_path=None):
     """
     tracker_class = _TRACKERS.get(exercise_name)
     if tracker_class:
-        return tracker_class(config_path)
+        return tracker_class(config_path, reps=reps)
     else:
         raise ValueError(f"Unknown exercise: {exercise_name}")

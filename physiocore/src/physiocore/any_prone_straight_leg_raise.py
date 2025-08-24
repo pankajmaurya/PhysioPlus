@@ -68,10 +68,11 @@ class PoseTracker:
         self.r_raise_pose = False
 
 class AnyProneSLRTracker:
-    def __init__(self, config_path=None):
+    def __init__(self, config_path=None, reps=None):
         self.debug, self.video, self.render_all, self.save_video, self.lenient_mode = modern_flags.parse_flags()
         self.config = self._load_config(config_path or self._default_config_path())
         self.hold_secs = self.config.get("HOLD_SECS", 5)
+        self.reps = reps
         self.pose_tracker = PoseTracker(self.config, self.lenient_mode)
         self.count = 0
         self.l_check_timer = False
@@ -169,6 +170,8 @@ class AnyProneSLRTracker:
                 self.output_with_info.write(frame)
 
             if display:
+                if self.reps and self.count >= self.reps:
+                    break
                 key = cv2.waitKey(delay) & 0xFF
                 if key == ord('q'):
                     break
