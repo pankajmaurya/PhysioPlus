@@ -159,6 +159,13 @@ class SoundManager:
         thread.daemon = True
         thread.start()
     
+    def play_sound_blocking(self, sound_path: str) -> None:
+        """Play a sound file synchronously (blocking until complete)"""
+        if not self.enabled or not sound_path:
+            return
+        
+        self._play_sound_thread(sound_path)
+    
     def play_exercise_start(self, exercise_type: ExerciseType) -> None:
         """Play exercise-specific start sound"""
         if not self.enabled:
@@ -210,6 +217,10 @@ class SoundManager:
         """Play session completion sound"""
         self._play_common_sound(SoundEvent.SESSION_COMPLETE)
     
+    def play_session_complete_blocking(self) -> None:
+        """Play session completion sound (blocking until complete)"""
+        self._play_common_sound_blocking(SoundEvent.SESSION_COMPLETE)
+    
     def _play_common_sound(self, event: SoundEvent) -> None:
         """Play a common (non-exercise-specific) sound"""
         sound_file = self._sound_mapping["common"][self.language].get(event.value)
@@ -217,6 +228,14 @@ class SoundManager:
             sound_path = self._get_sound_path(sound_file)
             if sound_path:
                 self.play_sound(sound_path)
+    
+    def _play_common_sound_blocking(self, event: SoundEvent) -> None:
+        """Play a common (non-exercise-specific) sound (blocking)"""
+        sound_file = self._sound_mapping["common"][self.language].get(event.value)
+        if sound_file:
+            sound_path = self._get_sound_path(sound_file)
+            if sound_path:
+                self.play_sound_blocking(sound_path)
     
     def set_language(self, language: str) -> None:
         """Change the language for audio feedback"""
@@ -275,6 +294,11 @@ def play_session_complete_sound(language: str = "english", enabled: bool = True)
     """Play session completion sound"""
     sound_manager = get_sound_manager(language=language, enabled=enabled)
     sound_manager.play_session_complete()
+
+def play_session_complete_sound_blocking(language: str = "english", enabled: bool = True) -> None:
+    """Play session completion sound (blocking until complete)"""
+    sound_manager = get_sound_manager(language=language, enabled=enabled)
+    sound_manager.play_session_complete_blocking()
 
 def play_welcome_sound(language: str = "english", enabled: bool = True) -> None:
     """Play welcome sound"""
