@@ -4,6 +4,7 @@ import time
 from threading import Thread
 import cv2
 import mediapipe as mp
+import speech_recognition as sr
 
 from physiocore.lib import modern_flags, graphics_utils
 from physiocore.lib.graphics_utils import ExerciseInfoRenderer, ExerciseState
@@ -108,6 +109,22 @@ class AnySLRTracker:
         self.output_with_info = None
         self.renderer = ExerciseInfoRenderer()
         self.session_started = False
+        self.skip_exercise = False
+        self.recognizer = None
+        self.microphone = None
+        self.stop_listening = None
+
+    def _voice_callback(self, recognizer, audio):
+        try:
+            command = recognizer.recognize_google(audio).lower().strip()
+            print(f"Heard command: '{command}'")
+            if "skip" in command:
+                print("Skip command detected!")
+                self.skip_exercise = True
+        except sr.UnknownValueError:
+            pass
+        except sr.RequestError as e:
+            print(f"API Error: {e}")
 
     def _default_config_path(self):
         script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -143,7 +160,23 @@ class AnySLRTracker:
             play_exercise_start_sound("slr", language=self.sound_language, enabled=self.sound_enabled)
             self.session_started = True
 
+        # Initialize recognizer and microphone
+        self.recognizer = sr.Recognizer()
+        self.microphone = sr.Microphone()
+
+        # Adjust for ambient noise once
+        with self.microphone as source:
+            self.recognizer.adjust_for_ambient_noise(source, duration=0.5)
+
+        # Start listening in the background
+        self.stop_listening = self.recognizer.listen_in_background(self.microphone, self._voice_callback, phrase_time_limit=2)
+        print("Voice recognition started in the background.")
+
         while True:
+            if self.skip_exercise:
+                print("Skipping exercise due to voice command.")
+                break
+
             success, landmarks, frame, pose_landmarks = processFrameAndGetLandmarks(self.cap, pose2)
             if not success:
                 break
@@ -289,6 +322,11 @@ class AnySLRTracker:
                 exit()
 
     def _cleanup(self):
+        if self.stop_listening:
+            self.stop_listening(wait_for_stop=False)
+            self.stop_listening = None
+            print("Voice recognition stopped.")
+
         if self.cap:
             self.cap.release()
         if self.save_video:
