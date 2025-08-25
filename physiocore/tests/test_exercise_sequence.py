@@ -2,12 +2,13 @@ import sys
 import time
 from physiocore.tracker import create_tracker, _TRACKERS
 
+from physiocore.lib.sound_utils import PYGAME_AVAILABLE
+
 # Try to import pygame to check if sound is playing
 try:
     import pygame
-    PYGAME_AVAILABLE = True
 except ImportError:
-    PYGAME_AVAILABLE = False
+    pass
 
 def wait_for_sound_completion(max_wait_time=5.0):
     """
@@ -19,9 +20,12 @@ def wait_for_sound_completion(max_wait_time=5.0):
     if PYGAME_AVAILABLE:
         # Check if pygame mixer is busy (playing sound)
         wait_time = 0
-        while pygame.mixer.music.get_busy() and wait_time < max_wait_time:
-            time.sleep(0.1)
-            wait_time += 0.1
+        try:
+            while pygame.mixer.music.get_busy() and wait_time < max_wait_time:
+                time.sleep(0.1)
+                wait_time += 0.1
+        except pygame.error as e:
+            print(f"Couldn't get mixer status: {e}")
         
         # Add small buffer after sound stops
         if wait_time > 0:

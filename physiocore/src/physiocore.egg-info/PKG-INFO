@@ -36,6 +36,8 @@ Requires-Dist: opencv-contrib-python<4.12
 Requires-Dist: numpy<2
 Requires-Dist: pygame
 Requires-Dist: setuptools<81
+Requires-Dist: SpeechRecognition==3.10.1
+Requires-Dist: PyAudio==0.2.14
 Dynamic: license-file
 
 # Computer vision based exercise tracker

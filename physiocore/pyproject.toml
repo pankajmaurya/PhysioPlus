@@ -17,7 +17,9 @@ dependencies = [
     "opencv-contrib-python<4.12",
     "numpy<2",
     "pygame",
-    "setuptools<81"
+    "setuptools<81",
+    "SpeechRecognition==3.10.1",
+    "PyAudio==0.2.14"
 ]
 keywords = ["physiotherapy", "exercise", "movement", "rehab"]
 

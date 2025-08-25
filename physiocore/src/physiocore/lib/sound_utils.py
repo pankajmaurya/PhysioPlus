@@ -18,6 +18,9 @@ try:
 except ImportError:
     PYGAME_AVAILABLE = False
     print("pygame not available, sound system disabled")
+except pygame.error as e:
+    PYGAME_AVAILABLE = False
+    print(f"Pygame sound initialization failed: {e}")
 
 try:
     import playsound
