@@ -6,7 +6,7 @@ Replaces the old manual parsing functions: parse_flags, parse_more_flags, parse_
 import argparse
 import sys
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, List
 
 @dataclass
 class Config:
@@ -22,6 +22,7 @@ class Config:
     exercise: Optional[str] = None
     sound_enabled: bool = True
     sound_language: str = "english"
+    skip_words: List[str] = None
 
 # Global cache for parsed configuration
 _cached_config = None
@@ -112,7 +113,8 @@ def parse_config() -> Config:
         more_cobra_checks=args.more_cobra_checks,
         exercise=exercise,
         sound_enabled=sound_enabled,
-        sound_language=args.sound_language
+        sound_language=args.sound_language,
+        skip_words=["next", "no", "skip"]
     )
     
     # Print settings (matching your original format)

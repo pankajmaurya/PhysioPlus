@@ -91,7 +91,7 @@ class BridgingTracker:
         self.output_with_info = None
         self.renderer = ExerciseInfoRenderer()
         self.session_started = False
-        self.skip_exercise = False
+        self.next_exercise = False
         self.recognizer = None
         self.microphone = None
         self.stop_listening = None
@@ -100,9 +100,9 @@ class BridgingTracker:
         try:
             command = recognizer.recognize_google(audio).lower().strip()
             print(f"Heard command: '{command}'")
-            if "skip" in command:
-                print("Skip command detected!")
-                self.skip_exercise = True
+            if any([skip_word in command for skip_word in self.config_obj.skip_words]):
+                print("Next command detected!")
+                self.next_exercise = True
         except sr.UnknownValueError:
             pass
         except sr.RequestError as e:
@@ -155,8 +155,8 @@ class BridgingTracker:
         print("Voice recognition started in the background.")
 
         while True:
-            if self.skip_exercise:
-                print("Skipping exercise due to voice command.")
+            if self.next_exercise:
+                print("Moving to next exercise due to voice command.")
                 break
             success, landmarks, frame, pose_landmarks = mp_utils.processFrameAndGetLandmarks(self.cap)
             if not success:
