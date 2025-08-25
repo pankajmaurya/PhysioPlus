@@ -110,12 +110,12 @@ class SoundManager:
             },
             "indian": {
                 SoundEvent.COUNT_INCREMENT.value: "short-sample.wav",
-                SoundEvent.MILESTONE_5.value: "FiveRepeatsCompleted.wav",  # No Indian variant
+                SoundEvent.MILESTONE_5.value: "Indian-FiveRepeatsCompleted.wav",
                 SoundEvent.MILESTONE_10.value: "set-complete.wav",  # No Indian variant
                 SoundEvent.ENCOURAGEMENT_1.value: "Indian-GreatFormKeepItUp.wav",
                 SoundEvent.ENCOURAGEMENT_2.value: "Indian-NiceWorkThreeMoreToGo.wav", 
                 SoundEvent.ENCOURAGEMENT_3.value: "Indian-PerfectYouAreDoingAmazing.wav",
-                SoundEvent.SESSION_COMPLETE.value: "WellDoneTakeQuickRest.wav",  # No Indian variant
+                SoundEvent.SESSION_COMPLETE.value: "Indian-WellDoneTakeQuickRest.wav",
                 SoundEvent.WELCOME.value: "Indian-welcome.wav"
             }
         }
