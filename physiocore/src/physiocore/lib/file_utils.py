@@ -1,12 +1,14 @@
 from threading import Thread
 import cv2
 from .platform_utils import save_video_codec
+from .sound_utils import play_count_sound, play_session_complete_sound, play_session_complete_sound_blocking
 
 import os
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "1"
 
 import pygame
 
+# Legacy pygame initialization for backward compatibility
 try:
     pygame.mixer.init()
     sound_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sounds", "short-sample.wav")
@@ -46,11 +48,21 @@ def release_files(output, output_with_info):
     output_with_info.release()
     cv2.destroyAllWindows()
 
-def announceForCount(count):
-    if count % 10 == 0:
-        Thread(target=announce10).start()
-    else:
-        Thread(target=announce).start()
+def announceForCount(count, language="english", enabled=True):
+    """
+    Enhanced announceForCount with new sound system integration.
+    Maintains backward compatibility while supporting new features.
+    """
+    # Use new sound system if available
+    try:
+        play_count_sound(count, language=language, enabled=enabled)
+    except Exception as e:
+        print(f"New sound system failed, falling back to legacy: {e}")
+        # Fallback to legacy behavior
+        if count % 10 == 0:
+            Thread(target=announce10).start()
+        else:
+            Thread(target=announce).start()
 
 def announce():
     global setFinished
@@ -67,6 +79,10 @@ def announce():
         print(f"Error playing sound: {e}")
 
 def announce10():
+    """
+    Legacy function for 10-count milestone.
+    Maintained for backward compatibility.
+    """
     global setFinished
     sound_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sounds", "set-complete.wav")
     pygame.mixer.music.load(sound_path)
@@ -78,4 +94,47 @@ def announce10():
 
     except Exception as e:
         print(f"Error playing sound: {e}")
+
+# New convenience functions using the enhanced sound system
+def play_exercise_start_sound(exercise_type, language="english", enabled=True):
+    """
+    Play exercise-specific start sound.
     
+    Args:
+        exercise_type: Type of exercise (ankle_toe, bridging, cobra, prone_slr, slr)
+        language: Language preference (english/indian)
+        enabled: Whether sound is enabled
+    """
+    try:
+        from .sound_utils import play_exercise_start_sound as play_start
+        play_start(exercise_type, language=language, enabled=enabled)
+    except Exception as e:
+        print(f"Error playing exercise start sound: {e}")
+
+def play_session_complete_sound(language="english", enabled=True):
+    """
+    Play session completion sound.
+    
+    Args:
+        language: Language preference (english/indian)
+        enabled: Whether sound is enabled
+    """
+    try:
+        from .sound_utils import play_session_complete_sound as play_complete
+        play_complete(language=language, enabled=enabled)
+    except Exception as e:
+        print(f"Error playing session complete sound: {e}")
+
+def play_session_complete_sound_blocking(language="english", enabled=True):
+    """
+    Play session completion sound (blocking until complete).
+    
+    Args:
+        language: Language preference (english/indian)
+        enabled: Whether sound is enabled
+    """
+    try:
+        from .sound_utils import play_session_complete_sound_blocking as play_complete_blocking
+        play_complete_blocking(language=language, enabled=enabled)
+    except Exception as e:
+        print(f"Error playing session complete sound: {e}")

@@ -4,11 +4,12 @@ import time
 from threading import Thread
 import cv2
 import mediapipe as mp
+import speech_recognition as sr
 
 from physiocore.lib import modern_flags, graphics_utils, mp_utils
 from physiocore.lib.graphics_utils import ExerciseInfoRenderer, ExerciseState
 from physiocore.lib.basic_math import between
-from physiocore.lib.file_utils import announceForCount, create_output_files, release_files
+from physiocore.lib.file_utils import announceForCount, create_output_files, release_files, play_exercise_start_sound, play_session_complete_sound
 from physiocore.lib.landmark_utils import calculate_angle_between_landmarks, lower_body_on_ground
 from physiocore.lib.mp_utils import pose2
 
@@ -47,9 +48,18 @@ class PoseTracker:
 
 
 class AnkleToeMovementTracker:
-    def __init__(self, config_path=None):
-        self.debug, self.video, self.render_all, self.save_video, self.lenient_mode = modern_flags.parse_flags()
+    def __init__(self, config_path=None, reps=None):
+        self.config_obj = modern_flags.parse_config()
+        self.debug = self.config_obj.debug
+        self.video = self.config_obj.video
+        self.render_all = self.config_obj.render_all
+        self.save_video = self.config_obj.save_video
+        self.lenient_mode = self.config_obj.lenient_mode
+        self.sound_enabled = self.config_obj.sound_enabled
+        self.sound_language = self.config_obj.sound_language
+        
         self.config = self._load_config(config_path or self._default_config_path())
+        self.reps = reps
 
         self.relax_min = self.config.get("relax_ankle_angle_min", 80)
         self.relax_max = self.config.get("relax_ankle_angle_max", 110)
@@ -67,6 +77,24 @@ class AnkleToeMovementTracker:
         self.output = None
         self.output_with_info = None
         self.renderer = ExerciseInfoRenderer()
+        self.session_started = False
+        self.next_exercise = False
+        self.recognizer = None
+        self.microphone = None
+        self.stop_listening = None
+
+    def _voice_callback(self, recognizer, audio):
+        try:
+            command = recognizer.recognize_google(audio).lower().strip()
+            print(f"Heard command: '{command}'")
+            if any([skip_word in command for skip_word in self.config_obj.skip_words]):
+                print("Next command detected!")
+                self.next_exercise = True
+        except sr.UnknownValueError:
+            # This is expected when there's silence
+            pass
+        except sr.RequestError as e:
+            print(f"API Error: {e}")
 
     def _default_config_path(self):
         script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -98,7 +126,28 @@ class AnkleToeMovementTracker:
         if self.save_video:
             self.output, self.output_with_info = create_output_files(self.cap, self.save_video)
 
+        # Play exercise start sound once
+        if not self.session_started and self.sound_enabled:
+            play_exercise_start_sound("ankle_toe", language=self.sound_language, enabled=self.sound_enabled)
+            self.session_started = True
+
+        # Initialize recognizer and microphone
+        self.recognizer = sr.Recognizer()
+        self.microphone = sr.Microphone()
+
+        # Adjust for ambient noise once
+        with self.microphone as source:
+            self.recognizer.adjust_for_ambient_noise(source, duration=0.5)
+
+        # Start listening in the background
+        self.stop_listening = self.recognizer.listen_in_background(self.microphone, self._voice_callback, phrase_time_limit=2)
+        print("Voice recognition started in the background.")
+
         while True:
+            if self.next_exercise:
+                print("Moving to next exercise due to voice command.")
+                break
+
             success, landmarks, frame, pose_landmarks = mp_utils.processFrameAndGetLandmarks(self.cap, pose2)
             if not success:
                 break
@@ -137,6 +186,8 @@ class AnkleToeMovementTracker:
                 self.output_with_info.write(frame)
 
             if display:
+                if self.reps and self.count >= self.reps:
+                    break
                 key = cv2.waitKey(delay) & 0xFF
                 if key == ord("q"):
                     break
@@ -144,6 +195,11 @@ class AnkleToeMovementTracker:
                     self.pause_loop()
 
         self._cleanup()
+        
+        # Play session complete sound
+        if self.count > 0 and self.sound_enabled:
+            play_session_complete_sound(language=self.sound_language, enabled=self.sound_enabled)
+            
         return self.count
 
     def _handle_pose_hold(self, frame):
@@ -157,7 +213,7 @@ class AnkleToeMovementTracker:
                 self.count += 1
                 self.pose_tracker.reset()
                 self.check_timer = False
-                announceForCount(self.count)
+                announceForCount(self.count, language=self.sound_language, enabled=self.sound_enabled)
             else:
                 cv2.putText(
                     frame,
@@ -202,6 +258,11 @@ class AnkleToeMovementTracker:
                 exit()
 
     def _cleanup(self):
+        if self.stop_listening:
+            self.stop_listening(wait_for_stop=False)
+            self.stop_listening = None
+            print("Voice recognition stopped.")
+
         if self.cap:
             self.cap.release()
         if self.save_video:

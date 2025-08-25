@@ -4,11 +4,12 @@ import time
 from threading import Thread
 import cv2
 import mediapipe as mp
+import speech_recognition as sr
 
 from physiocore.lib import modern_flags, graphics_utils, mp_utils
 from physiocore.lib.graphics_utils import ExerciseInfoRenderer, ExerciseState
 from physiocore.lib.basic_math import between, calculate_angle, calculate_mid_point
-from physiocore.lib.file_utils import announceForCount, create_output_files, release_files
+from physiocore.lib.file_utils import announceForCount, create_output_files, release_files, play_exercise_start_sound, play_session_complete_sound
 from physiocore.lib.landmark_utils import calculate_angle_between_landmarks, detect_feet_orientation, upper_body_is_lying_down
 from physiocore.lib.mp_utils import pose2
 
@@ -68,10 +69,19 @@ class PoseTracker:
         self.r_raise_pose = False
 
 class AnyProneSLRTracker:
-    def __init__(self, config_path=None):
-        self.debug, self.video, self.render_all, self.save_video, self.lenient_mode = modern_flags.parse_flags()
+    def __init__(self, config_path=None, reps=None):
+        self.config_obj = modern_flags.parse_config()
+        self.debug = self.config_obj.debug
+        self.video = self.config_obj.video
+        self.render_all = self.config_obj.render_all
+        self.save_video = self.config_obj.save_video
+        self.lenient_mode = self.config_obj.lenient_mode
+        self.sound_enabled = self.config_obj.sound_enabled
+        self.sound_language = self.config_obj.sound_language
+        
         self.config = self._load_config(config_path or self._default_config_path())
         self.hold_secs = self.config.get("HOLD_SECS", 5)
+        self.reps = reps
         self.pose_tracker = PoseTracker(self.config, self.lenient_mode)
         self.count = 0
         self.l_check_timer = False
@@ -82,6 +92,23 @@ class AnyProneSLRTracker:
         self.output = None
         self.output_with_info = None
         self.renderer = ExerciseInfoRenderer()
+        self.session_started = False
+        self.next_exercise = False
+        self.recognizer = None
+        self.microphone = None
+        self.stop_listening = None
+
+    def _voice_callback(self, recognizer, audio):
+        try:
+            command = recognizer.recognize_google(audio).lower().strip()
+            print(f"Heard command: '{command}'")
+            if any([skip_word in command for skip_word in self.config_obj.skip_words]):
+                print("Next command detected!")
+                self.next_exercise = True
+        except sr.UnknownValueError:
+            pass
+        except sr.RequestError as e:
+            print(f"API Error: {e}")
 
     def _default_config_path(self):
         script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -96,10 +123,12 @@ class AnyProneSLRTracker:
             print("Config file not found, using default values")
             return {}
 
-    def process_video(self, video_path, display=False):
-        self.cap = cv2.VideoCapture(video_path)
+    def process_video(self, video_path=None, display=True):
+        self.video = video_path if video_path is not None else self.video
+        self.cap = cv2.VideoCapture(self.video if self.video else 0)
+
         if not self.cap.isOpened():
-            print(f"Error opening video file: {video_path}")
+            print(f"Error opening video stream or file: {self.video}")
             return 0
 
         input_fps = int(self.cap.get(cv2.CAP_PROP_FPS)) or 30
@@ -107,7 +136,28 @@ class AnyProneSLRTracker:
         if self.save_video:
             self.output, self.output_with_info = create_output_files(self.cap, self.save_video)
 
+        # Play exercise start sound once
+        if not self.session_started and self.sound_enabled:
+            play_exercise_start_sound("prone_slr", language=self.sound_language, enabled=self.sound_enabled)
+            self.session_started = True
+
+        # Initialize recognizer and microphone
+        self.recognizer = sr.Recognizer()
+        self.microphone = sr.Microphone()
+
+        # Adjust for ambient noise once
+        with self.microphone as source:
+            self.recognizer.adjust_for_ambient_noise(source, duration=0.5)
+
+        # Start listening in the background
+        self.stop_listening = self.recognizer.listen_in_background(self.microphone, self._voice_callback, phrase_time_limit=2)
+        print("Voice recognition started in the background.")
+
         while True:
+            if self.next_exercise:
+                print("Moving to next exercise due to voice command.")
+                break
+
             success, landmarks, frame, pose_landmarks = mp_utils.processFrameAndGetLandmarks(self.cap, pose2)
             if not success:
                 break
@@ -169,6 +219,8 @@ class AnyProneSLRTracker:
                 self.output_with_info.write(frame)
 
             if display:
+                if self.reps and self.count >= self.reps:
+                    break
                 key = cv2.waitKey(delay) & 0xFF
                 if key == ord('q'):
                     break
@@ -176,10 +228,15 @@ class AnyProneSLRTracker:
                     self._pause_loop()
 
         self._cleanup()
+        
+        # Play session complete sound
+        if self.count > 0 and self.sound_enabled:
+            play_session_complete_sound(language=self.sound_language, enabled=self.sound_enabled)
+            
         return self.count
 
     def start(self):
-        self.process_video(self.video if self.video else 0, display=True)
+        return self.process_video(display=True)
 
     def _handle_pose_hold(self, frame, leg='left'):
         now = time.time()
@@ -193,7 +250,7 @@ class AnyProneSLRTracker:
                     self.count += 1
                     self.pose_tracker.reset()
                     self.l_check_timer = False
-                    announceForCount(self.count)
+                    announceForCount(self.count, language=self.sound_language, enabled=self.sound_enabled)
                 else:
                     cv2.putText(frame, f'hold left leg: {self.hold_secs - now + self.l_time:.2f}',
                                 (250, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
@@ -207,7 +264,7 @@ class AnyProneSLRTracker:
                     self.count += 1
                     self.pose_tracker.reset()
                     self.r_check_timer = False
-                    announceForCount(self.count)
+                    announceForCount(self.count, language=self.sound_language, enabled=self.sound_enabled)
                 else:
                     cv2.putText(frame, f'hold right leg: {self.hold_secs - now + self.r_time:.2f}',
                                 (250, 90), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
@@ -249,6 +306,11 @@ class AnyProneSLRTracker:
                 exit()
 
     def _cleanup(self):
+        if self.stop_listening:
+            self.stop_listening(wait_for_stop=False)
+            self.stop_listening = None
+            print("Voice recognition stopped.")
+
         if self.cap:
             self.cap.release()
         if self.save_video:
