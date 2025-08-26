@@ -20,6 +20,8 @@ class Config:
     out_fps: int = 30
     more_cobra_checks: bool = False
     exercise: Optional[str] = None
+    sound_enabled: bool = True
+    sound_language: str = "english"
 
 # Global cache for parsed configuration
 _cached_config = None
@@ -60,6 +62,14 @@ def _create_parser() -> argparse.ArgumentParser:
     parser.add_argument('--exercise', type=str,
                        help='Name of the exercise to track')
     
+    # Sound configuration options
+    parser.add_argument('--sound_enabled', type=str, default='True',
+                       choices=['True', 'False', 'true', 'false'],
+                       help='Enable or disable sound feedback')
+    parser.add_argument('--sound_language', type=str, default='english',
+                       choices=['english', 'indian'],
+                       help='Language for audio feedback')
+    
     # Handle unknown positional arguments gracefully (for backward compatibility)
     parser.add_argument('remaining_args', nargs='*',
                        help='Additional positional arguments')
@@ -82,6 +92,9 @@ def parse_config() -> Config:
     # Convert lenient_mode string to boolean
     lenient_mode = args.lenient_mode.lower() == 'true'
     
+    # Convert sound_enabled string to boolean
+    sound_enabled = args.sound_enabled.lower() == 'true'
+    
     # Handle exercise - can come from --exercise flag or first positional arg
     exercise = args.exercise
     if not exercise and args.remaining_args:
@@ -97,7 +110,9 @@ def parse_config() -> Config:
         fps=args.fps,
         out_fps=args.out_fps,
         more_cobra_checks=args.more_cobra_checks,
-        exercise=exercise
+        exercise=exercise,
+        sound_enabled=sound_enabled,
+        sound_language=args.sound_language
     )
     
     # Print settings (matching your original format)
@@ -105,7 +120,8 @@ def parse_config() -> Config:
           f"--render_all {config.render_all}, --save_video {config.save_video}, "
           f"--lenient_mode {config.lenient_mode}, --fps {config.fps}, "
           f"--out_fps {config.out_fps}, --more_cobra_checks {config.more_cobra_checks}, "
-          f"--exercise {config.exercise}")
+          f"--exercise {config.exercise}, --sound_enabled {config.sound_enabled}, "
+          f"--sound_language {config.sound_language}")
     
     _cached_config = config
     return config
@@ -118,6 +134,14 @@ def parse_flags():
     """
     config = parse_config()
     return config.debug, config.video, config.render_all, config.save_video, config.lenient_mode
+
+def parse_sound_flags():
+    """
+    Parse sound-related flags
+    Returns: (sound_enabled, sound_language)
+    """
+    config = parse_config()
+    return config.sound_enabled, config.sound_language
 
 def parse_more_flags():
     """
