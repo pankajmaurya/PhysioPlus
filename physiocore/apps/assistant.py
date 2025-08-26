@@ -41,7 +41,7 @@ def run_exercise_sequence():
     sound_language = config.sound_language
     sound_enabled = config.sound_enabled
     
-    exercise_list = list(_TRACKERS.keys())
+    exercise_list = sorted(list(_TRACKERS.keys()), reverse=True)
     
     # Play welcome sound at the beginning of the sequence
     print(f"🎵 Welcome to PhysioPlus Exercise Sequence! (Language: {sound_language})")
@@ -61,11 +61,14 @@ def run_exercise_sequence():
             tracker.start()
             print(f"--- Completed exercise: {exercise} ---")
             
+            print("Waiting for completion sound to finish...")
+            wait_for_sound_completion(max_wait_time=15.0)
+
             # Allow time for session complete sound to finish before moving to next exercise
             # Only add delay between exercises, not after the last one
             if i < len(exercise_list) - 1:
-                print("Waiting for completion sound to finish...")
-                wait_for_sound_completion(max_wait_time=5.0)
+                print("Taking a 5-second break before next exercise...")
+                time.sleep(5.0)
                 print("Proceeding to next exercise...")
                 
         except ValueError as e:
