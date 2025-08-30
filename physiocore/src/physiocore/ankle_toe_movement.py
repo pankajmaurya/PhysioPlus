@@ -8,7 +8,7 @@ import mediapipe as mp
 from physiocore.lib import modern_flags, graphics_utils, mp_utils
 from physiocore.lib.graphics_utils import ExerciseInfoRenderer, ExerciseState
 from physiocore.lib.basic_math import between
-from physiocore.lib.file_utils import announceForCount, create_output_files, release_files
+from physiocore.lib.file_utils import announceForCount, create_output_files, release_files, play_exercise_start_sound, play_session_complete_sound
 from physiocore.lib.landmark_utils import calculate_angle_between_landmarks, lower_body_on_ground
 from physiocore.lib.mp_utils import pose2
 
@@ -47,9 +47,18 @@ class PoseTracker:
 
 
 class AnkleToeMovementTracker:
-    def __init__(self, config_path=None):
-        self.debug, self.video, self.render_all, self.save_video, self.lenient_mode = modern_flags.parse_flags()
+    def __init__(self, config_path=None, reps=None):
+        self.config_obj = modern_flags.parse_config()
+        self.debug = self.config_obj.debug
+        self.video = self.config_obj.video
+        self.render_all = self.config_obj.render_all
+        self.save_video = self.config_obj.save_video
+        self.lenient_mode = self.config_obj.lenient_mode
+        self.sound_enabled = self.config_obj.sound_enabled
+        self.sound_language = self.config_obj.sound_language
+        
         self.config = self._load_config(config_path or self._default_config_path())
+        self.reps = reps
 
         self.relax_min = self.config.get("relax_ankle_angle_min", 80)
         self.relax_max = self.config.get("relax_ankle_angle_max", 110)
@@ -67,6 +76,7 @@ class AnkleToeMovementTracker:
         self.output = None
         self.output_with_info = None
         self.renderer = ExerciseInfoRenderer()
+        self.session_started = False
 
     def _default_config_path(self):
         script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -97,6 +107,11 @@ class AnkleToeMovementTracker:
 
         if self.save_video:
             self.output, self.output_with_info = create_output_files(self.cap, self.save_video)
+
+        # Play exercise start sound once
+        if not self.session_started and self.sound_enabled:
+            play_exercise_start_sound("ankle_toe", language=self.sound_language, enabled=self.sound_enabled)
+            self.session_started = True
 
         while True:
             success, landmarks, frame, pose_landmarks = mp_utils.processFrameAndGetLandmarks(self.cap, pose2)
@@ -137,13 +152,22 @@ class AnkleToeMovementTracker:
                 self.output_with_info.write(frame)
 
             if display:
+                if self.reps and self.count >= self.reps:
+                    break
                 key = cv2.waitKey(delay) & 0xFF
                 if key == ord("q"):
                     break
                 elif key == ord("p"):
-                    self.pause_loop()
+                    should_quit = self._pause_loop()
+                    if should_quit:
+                        break
 
-        self._cleanup()
+        # Play session complete sound
+        if self.count > 0 and self.sound_enabled:
+            play_session_complete_sound(language=self.sound_language, enabled=self.sound_enabled)
+
+        self._cleanup()        
+            
         return self.count
 
     def _handle_pose_hold(self, frame):
@@ -157,7 +181,7 @@ class AnkleToeMovementTracker:
                 self.count += 1
                 self.pose_tracker.reset()
                 self.check_timer = False
-                announceForCount(self.count)
+                announceForCount(self.count, language=self.sound_language, enabled=self.sound_enabled)
             else:
                 cv2.putText(
                     frame,
@@ -196,10 +220,9 @@ class AnkleToeMovementTracker:
         while True:
             key = cv2.waitKey(0) & 0xFF
             if key == ord("r"):
-                break
+                return False  # Resume
             elif key == ord("q"):
-                self._cleanup()
-                exit()
+                return True   # Quit gracefully
 
     def _cleanup(self):
         if self.cap:

@@ -8,7 +8,7 @@ import mediapipe as mp
 from physiocore.lib import modern_flags, graphics_utils
 from physiocore.lib.graphics_utils import ExerciseInfoRenderer, ExerciseState
 from physiocore.lib.basic_math import between, calculate_mid_point, calculate_signed_angle
-from physiocore.lib.file_utils import announceForCount, create_output_files, release_files
+from physiocore.lib.file_utils import announceForCount, create_output_files, release_files, play_exercise_start_sound, play_session_complete_sound
 from physiocore.lib.landmark_utils import calculate_angle_between_landmarks, upper_body_is_lying_down
 from physiocore.lib.mp_utils import pose2, processFrameAndGetLandmarks
 
@@ -81,10 +81,19 @@ class PoseTracker:
         self.l_raise_pose = self.r_raise_pose = False
 
 class AnySLRTracker:
-    def __init__(self, config_path=None):
-        self.debug, self.video, self.render_all, self.save_video, self.lenient_mode = modern_flags.parse_flags()
+    def __init__(self, config_path=None, reps=None):
+        self.config_obj = modern_flags.parse_config()
+        self.debug = self.config_obj.debug
+        self.video = self.config_obj.video
+        self.render_all = self.config_obj.render_all
+        self.save_video = self.config_obj.save_video
+        self.lenient_mode = self.config_obj.lenient_mode
+        self.sound_enabled = self.config_obj.sound_enabled
+        self.sound_language = self.config_obj.sound_language
+        
         self.config = self._load_config(config_path or self._default_config_path())
         self.hold_secs = self.config.get("HOLD_SECS", 3)
+        self.reps = reps
         self.multiplyer = self.config.get("multiplyer", 1.0)
         if self.video:
             self.hold_secs = 8.0 * self.hold_secs / 30.0
@@ -98,6 +107,7 @@ class AnySLRTracker:
         self.output = None
         self.output_with_info = None
         self.renderer = ExerciseInfoRenderer()
+        self.session_started = False
 
     def _default_config_path(self):
         script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -127,6 +137,11 @@ class AnySLRTracker:
         delay = int(1000 / input_fps)
         if self.save_video:
             self.output, self.output_with_info = create_output_files(self.cap, self.save_video)
+
+        # Play exercise start sound once
+        if not self.session_started and self.sound_enabled:
+            play_exercise_start_sound("slr", language=self.sound_language, enabled=self.sound_enabled)
+            self.session_started = True
 
         while True:
             success, landmarks, frame, pose_landmarks = processFrameAndGetLandmarks(self.cap, pose2)
@@ -187,13 +202,22 @@ class AnySLRTracker:
                 self.output_with_info.write(frame)
 
             if display:
+                if self.reps and self.count >= self.reps:
+                    break
                 key = cv2.waitKey(delay) & 0xFF
                 if key == ord('q'):
                     break
                 elif key == ord('p'):
-                    self._pause_loop()
+                    should_quit = self._pause_loop()
+                    if should_quit:
+                        break
+        
+        # Play session complete sound
+        if self.count > 0 and self.sound_enabled:
+            play_session_complete_sound(language=self.sound_language, enabled=self.sound_enabled)
         
         self._cleanup()
+            
         return self.count
 
     def _handle_pose_hold(self, frame, leg='left'):
@@ -208,7 +232,7 @@ class AnySLRTracker:
                     self.count += 1
                     self.pose_tracker.reset()
                     self.l_check_timer = False
-                    announceForCount(self.count)
+                    announceForCount(self.count, language=self.sound_language, enabled=self.sound_enabled)
                 else:
                     cv2.putText(
                         frame, f'hold left leg: {self.hold_secs - now + self.l_time:.2f}',
@@ -224,7 +248,7 @@ class AnySLRTracker:
                     self.count += 1
                     self.pose_tracker.reset()
                     self.r_check_timer = False
-                    announceForCount(self.count)
+                    announceForCount(self.count, language=self.sound_language, enabled=self.sound_enabled)
                 else:
                     cv2.putText(
                         frame, f'hold right leg: {self.hold_secs - now + self.r_time:.2f}',
@@ -261,10 +285,9 @@ class AnySLRTracker:
         while True:
             key = cv2.waitKey(0) & 0xFF
             if key == ord("r"):
-                break
+                return False  # Resume
             elif key == ord("q"):
-                self._cleanup()
-                exit()
+                return True   # Quit gracefully
 
     def _cleanup(self):
         if self.cap:
