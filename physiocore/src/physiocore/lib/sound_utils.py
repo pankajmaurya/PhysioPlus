@@ -13,7 +13,6 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "1"
 
 try:
     import pygame
-    pygame.mixer.init()
     PYGAME_AVAILABLE = True
 except ImportError:
     PYGAME_AVAILABLE = False
@@ -141,6 +140,7 @@ class SoundManager:
         """Play sound in a separate thread to avoid blocking"""
         try:
             if PYGAME_AVAILABLE:
+                pygame.mixer.init()
                 pygame.mixer.music.load(sound_path)
                 pygame.mixer.music.play()
                 while pygame.mixer.music.get_busy():

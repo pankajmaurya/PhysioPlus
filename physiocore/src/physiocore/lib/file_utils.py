@@ -9,14 +9,7 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "1"
 import pygame
 
 # Legacy pygame initialization for backward compatibility
-try:
-    pygame.mixer.init()
-    sound_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sounds", "short-sample.wav")
-    pygame.mixer.music.load(sound_path)
-except pygame.error:
-    print("Could not initialize pygame mixer. Sound will be disabled.")
-    # Set sound_path to None or a dummy value if the rest of the code depends on it
-    sound_path = None
+sound_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sounds", "short-sample.wav")
 setFinished = False
 
 def create_output_files(cap, save_video):
