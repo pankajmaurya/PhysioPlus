@@ -176,14 +176,16 @@ class BridgingTracker:
                 if key == ord('q'):
                     break
                 elif key == ord('p'):
-                   self._pause_loop()
-
-        self._cleanup(display=display)
+                   should_quit = self._pause_loop()
+                   if should_quit:
+                       break
         
         # Play session complete sound
         if self.count > 0 and self.sound_enabled:
             play_session_complete_sound(language=self.sound_language, enabled=self.sound_enabled)
-            
+        
+        self._cleanup(display=display)
+
         return self.count
 
     def _handle_pose_hold(self, frame=None):
@@ -235,10 +237,9 @@ class BridgingTracker:
         while True:
             key = cv2.waitKey(0) & 0xFF
             if key == ord('r'):
-                break
+                return False  # Resume
             elif key == ord('q'):
-                self._cleanup()
-                exit()
+                return True   # Quit gracefully
 
     def _cleanup(self, display=True):
         if self.cap:

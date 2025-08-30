@@ -190,14 +190,16 @@ class AnyProneSLRTracker:
                 if key == ord('q'):
                     break
                 elif key == ord('p'):
-                    self._pause_loop()
+                    should_quit = self._pause_loop()
+                    if should_quit:
+                        break
 
-        self._cleanup()
-        
         # Play session complete sound
         if self.count > 0 and self.sound_enabled:
             play_session_complete_sound(language=self.sound_language, enabled=self.sound_enabled)
-            
+
+        self._cleanup()
+                    
         return self.count
 
     def start(self):
@@ -265,10 +267,9 @@ class AnyProneSLRTracker:
         while True:
             key = cv2.waitKey(0) & 0xFF
             if key == ord('r'):  # Resume
-                break
-            elif key == ord('q'):  # Quit
-                self._cleanup()
-                exit()
+                return False
+            elif key == ord('q'):  # Quit gracefully
+                return True
 
     def _cleanup(self):
         if self.cap:

@@ -158,13 +158,15 @@ class AnkleToeMovementTracker:
                 if key == ord("q"):
                     break
                 elif key == ord("p"):
-                    self.pause_loop()
+                    should_quit = self._pause_loop()
+                    if should_quit:
+                        break
 
-        self._cleanup()
-        
         # Play session complete sound
         if self.count > 0 and self.sound_enabled:
             play_session_complete_sound(language=self.sound_language, enabled=self.sound_enabled)
+
+        self._cleanup()        
             
         return self.count
 
@@ -218,10 +220,9 @@ class AnkleToeMovementTracker:
         while True:
             key = cv2.waitKey(0) & 0xFF
             if key == ord("r"):
-                break
+                return False  # Resume
             elif key == ord("q"):
-                self._cleanup()
-                exit()
+                return True   # Quit gracefully
 
     def _cleanup(self):
         if self.cap:
