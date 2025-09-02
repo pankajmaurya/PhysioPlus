@@ -4,12 +4,14 @@ from physiocore.bridging import BridgingTracker
 from physiocore.any_straight_leg_raise import AnySLRTracker
 from physiocore.any_prone_straight_leg_raise import AnyProneSLRTracker
 
+from physiocore.lib.exercise_lib import ExerciseType
+
 _TRACKERS = {
-    "ankle_toe_movement": AnkleToeMovementTracker,
-    "cobra_stretch": CobraStretchTracker,
-    "bridging": BridgingTracker,
-    "any_slr": AnySLRTracker,
-    "any_prone_slr": AnyProneSLRTracker,
+    ExerciseType.ANKLE_TOE.value: AnkleToeMovementTracker,
+    ExerciseType.COBRA.value: CobraStretchTracker,
+    ExerciseType.BRIDGING.value: BridgingTracker,
+    ExerciseType.SLR.value: AnySLRTracker,
+    ExerciseType.PRONE_SLR.value: AnyProneSLRTracker,
 }
 
 

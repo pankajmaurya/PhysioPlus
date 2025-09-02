@@ -1,6 +1,7 @@
 from threading import Thread
 import cv2
 from .platform_utils import save_video_codec
+from .voice_utils import play_count_sound
 
 import os
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "1"
@@ -46,10 +47,7 @@ def release_files(output, output_with_info):
     output_with_info.release()
 
 def announceForCount(count):
-    if count % 10 == 0:
-        Thread(target=announce10).start()
-    else:
-        Thread(target=announce).start()
+    play_count_sound(count)
 
 def announce():
     global setFinished
@@ -65,16 +63,4 @@ def announce():
     except Exception as e:
         print(f"Error playing sound: {e}")
 
-def announce10():
-    global setFinished
-    sound_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sounds", "set-complete.wav")
-    pygame.mixer.music.load(sound_path)
-    setFinished = True
-    try:
-        pygame.mixer.music.play()
-        while pygame.mixer.music.get_busy():
-            pass
-
-    except Exception as e:
-        print(f"Error playing sound: {e}")
     
