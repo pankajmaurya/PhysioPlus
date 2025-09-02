@@ -141,7 +141,9 @@ class AnkleToeMovementTracker:
                 if key == ord("q"):
                     break
                 elif key == ord("p"):
-                    self.pause_loop()
+                    should_quit = self.pause_loop()
+                    if should_quit:
+                        break
 
         self._cleanup()
         return self.count
@@ -196,10 +198,9 @@ class AnkleToeMovementTracker:
         while True:
             key = cv2.waitKey(0) & 0xFF
             if key == ord("r"):
-                break
+                return False
             elif key == ord("q"):
-                self._cleanup()
-                exit()
+                return True
 
     def _cleanup(self):
         if self.cap:

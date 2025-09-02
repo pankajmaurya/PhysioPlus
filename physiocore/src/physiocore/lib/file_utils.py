@@ -44,7 +44,6 @@ def release_files(output, output_with_info):
     # Release the video capture and writer objects
     output.release()
     output_with_info.release()
-    cv2.destroyAllWindows()
 
 def announceForCount(count):
     if count % 10 == 0:
