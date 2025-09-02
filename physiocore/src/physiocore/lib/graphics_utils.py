@@ -26,6 +26,14 @@ mp_pose = mp.solutions.pose
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
 
+def pause_loop():
+    while True:
+        key = cv2.waitKey(0) & 0xFF
+        if key == ord("r"):
+            return False
+        elif key == ord("q"):
+            return True
+
 # Set excluded landmarks
 default_excluded_landmarks = [0,1,2,3,4,5,6,7,8,9,10,17,18,19,20,21,22]
 
