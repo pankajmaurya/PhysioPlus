@@ -159,7 +159,9 @@ class BridgingTracker:
                 if key == ord('q'):
                     break
                 elif key == ord('p'):
-                   self._pause_loop()
+                    should_quit = self.pause_loop()
+                    if should_quit:
+                        break
 
         self._cleanup(display=display)
         return self.count
@@ -209,14 +211,13 @@ class BridgingTracker:
         
         self.renderer.render_complete_frame(frame, exercise_state)
 
-    def _pause_loop(self):
+    def pause_loop(self):
         while True:
             key = cv2.waitKey(0) & 0xFF
-            if key == ord('r'):
-                break
-            elif key == ord('q'):
-                self._cleanup()
-                exit()
+            if key == ord("r"):
+                return False
+            elif key == ord("q"):
+                return True
 
     def _cleanup(self, display=True):
         if self.cap:
