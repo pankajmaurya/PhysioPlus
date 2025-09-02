@@ -52,6 +52,7 @@ class PoseTracker:
 class CobraStretchTracker:
     def __init__(self, config_path=None):
         flag_config_obj = modern_flags.parse_config()
+        self.reps = flag_config_obj.reps
         self.debug = flag_config_obj.debug
         self.video = flag_config_obj.video
         self.render_all = flag_config_obj.render_all
@@ -60,6 +61,7 @@ class CobraStretchTracker:
 
         self.config = self._load_config(config_path or self._default_config_path())
         self.hold_secs = self.config.get("HOLD_SECS", 3)
+
         self.pose_tracker = PoseTracker(self.config, self.lenient_mode)
         self.count = 0
         self.check_timer = False
@@ -153,6 +155,8 @@ class CobraStretchTracker:
                 self.output_with_info.write(frame)
             
             if display:
+                if self.reps and self.count >= self.reps:
+                    break
                 key = cv2.waitKey(delay) & 0xFF
                 if key == ord("q"):
                     break
