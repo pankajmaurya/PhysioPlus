@@ -18,6 +18,7 @@ class Config:
     fps: int = 30
     out_fps: int = 30
     exercise: Optional[str] = None
+    reps: int = 10
 
 # Global cache for parsed configuration
 _cached_config = None
@@ -52,6 +53,9 @@ def _create_parser() -> argparse.ArgumentParser:
     # Exercise option (can be used as flag or positional)
     parser.add_argument('--exercise', type=str,
                        help='Name of the exercise to track')
+
+    parser.add_argument('--reps', type=int, default=100,
+                       help='repeats per exercise')
     
     # Handle unknown positional arguments gracefully (for backward compatibility)
     parser.add_argument('remaining_args', nargs='*',
@@ -89,14 +93,15 @@ def parse_config() -> Config:
         lenient_mode=lenient_mode,
         fps=args.fps,
         out_fps=args.out_fps,
-        exercise=exercise
+        exercise=exercise,
+        reps=args.reps
     )
     
     # Print settings (matching your original format)
     print(f"Settings are --debug {config.debug}, --video {config.video}, "
           f"--render_all {config.render_all}, --save_video {config.save_video}, "
           f"--lenient_mode {config.lenient_mode}, --fps {config.fps}, "
-          f"--out_fps {config.out_fps}, "
+          f"--out_fps {config.out_fps}, --reps {config.reps}, "
           f"--exercise {config.exercise}")
     
     _cached_config = config
@@ -124,6 +129,7 @@ if __name__ == "__main__":
     print(f"Exercise: {config.exercise}")
     print(f"FPS: {config.fps}")
     print(f"Out FPS: {config.out_fps}")
+    print(f"Repeats: {config.reps}")
             
     print("\n=== Multiple calls test (should use cache) ===")
     config2 = get_config()

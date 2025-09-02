@@ -83,6 +83,7 @@ class PoseTracker:
 class AnySLRTracker:
     def __init__(self, config_path=None):
         flag_config_obj = modern_flags.parse_config()
+        self.reps = flag_config_obj.reps
         self.debug = flag_config_obj.debug
         self.video = flag_config_obj.video
         self.render_all = flag_config_obj.render_all
@@ -94,6 +95,7 @@ class AnySLRTracker:
         self.multiplyer = self.config.get("multiplyer", 1.0)
         if self.video:
             self.hold_secs = 8.0 * self.hold_secs / 30.0
+
         self.pose_tracker = PoseTracker(self.config, self.lenient_mode)
         self.count = 0
         self.l_check_timer = False
@@ -193,6 +195,8 @@ class AnySLRTracker:
                 self.output_with_info.write(frame)
 
             if display:
+                if self.reps and self.count >= self.reps:
+                    break
                 key = cv2.waitKey(delay) & 0xFF
                 if key == ord('q'):
                     break
