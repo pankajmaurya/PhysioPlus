@@ -1,6 +1,6 @@
 """
 Unified argument parsing module using argparse.
-Replaces the old manual parsing functions: parse_flags, parse_more_flags, parse_cobra_flags
+Replaces the old manual parsing functions: parse_flags, parse_more_flags
 """
 
 import argparse
@@ -18,8 +18,9 @@ class Config:
     lenient_mode: bool = True
     fps: int = 30
     out_fps: int = 30
-    more_cobra_checks: bool = False
     exercise: Optional[str] = None
+    voice_enabled: bool = True
+    voice_mode: str = "hindi"
 
 # Global cache for parsed configuration
 _cached_config = None
@@ -51,11 +52,7 @@ def _create_parser() -> argparse.ArgumentParser:
     # Additional flags from parse_more_flags
     parser.add_argument('--out_fps', type=int, default=30,
                        help='Output frames per second')
-    
-    # Additional flags from parse_cobra_flags  
-    parser.add_argument('--more_cobra_checks', action='store_true',
-                       help='Enable additional cobra pose checks')
-    
+        
     # Exercise option (can be used as flag or positional)
     parser.add_argument('--exercise', type=str,
                        help='Name of the exercise to track')
@@ -63,6 +60,14 @@ def _create_parser() -> argparse.ArgumentParser:
     # Handle unknown positional arguments gracefully (for backward compatibility)
     parser.add_argument('remaining_args', nargs='*',
                        help='Additional positional arguments')
+
+    # Sound configuration options
+    parser.add_argument('--voice_enabled', type=str, default='True',
+                       choices=['True', 'False', 'true', 'false'],
+                       help='Enable or disable sound feedback')
+    parser.add_argument('--voice_mode', type=str, default='hindi',
+                       choices=['american', 'indian', 'hindi'],
+                       help='Voice Mode for audio feedback')
     
     return parser
 
@@ -96,16 +101,18 @@ def parse_config() -> Config:
         lenient_mode=lenient_mode,
         fps=args.fps,
         out_fps=args.out_fps,
-        more_cobra_checks=args.more_cobra_checks,
-        exercise=exercise
+        exercise=exercise,
+        voice_enabled=args.voice_enabled.lower() == 'true',
+        voice_mode=args.voice_mode
     )
     
     # Print settings (matching your original format)
     print(f"Settings are --debug {config.debug}, --video {config.video}, "
           f"--render_all {config.render_all}, --save_video {config.save_video}, "
           f"--lenient_mode {config.lenient_mode}, --fps {config.fps}, "
-          f"--out_fps {config.out_fps}, --more_cobra_checks {config.more_cobra_checks}, "
-          f"--exercise {config.exercise}")
+          f"--out_fps {config.out_fps}, "
+          f"--exercise {config.exercise}, --voice_enabled {config.voice_enabled}, "
+          f"--voice_mode {config.voice_mode}")
     
     _cached_config = config
     return config
@@ -127,15 +134,6 @@ def parse_more_flags():
     config = parse_config()
     return (config.debug, config.video, config.render_all, config.save_video, 
             config.lenient_mode, config.fps, config.out_fps)
-
-def parse_cobra_flags():
-    """
-    Backward compatible version of parse_cobra_flags()
-    Returns: (debug, video, render_all, save_video, more_cobra_checks)
-    """
-    config = parse_config()
-    return (config.debug, config.video, config.render_all, config.save_video, 
-            config.more_cobra_checks)
 
 def reset_config():
     """Reset the cached configuration (useful for testing)"""
@@ -166,10 +164,7 @@ if __name__ == "__main__":
     
     debug, video, render_all, save_video, lenient_mode, fps, out_fps = parse_more_flags()
     print(f"parse_more_flags: fps={fps}, out_fps={out_fps}")
-    
-    debug, video, render_all, save_video, more_cobra_checks = parse_cobra_flags()
-    print(f"parse_cobra_flags: more_cobra_checks={more_cobra_checks}")
-    
+        
     print("\n=== Multiple calls test (should use cache) ===")
     config2 = get_config()
     print(f"Same object: {config is config2}")  # Should be True due to caching
