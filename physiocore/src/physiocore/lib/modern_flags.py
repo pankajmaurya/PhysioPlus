@@ -19,6 +19,8 @@ class Config:
     out_fps: int = 30
     exercise: Optional[str] = None
     reps: int = 10
+    voice_enabled: bool = True
+    voice_mode: str = "hindi"
 
 # Global cache for parsed configuration
 _cached_config = None
@@ -57,6 +59,14 @@ def _create_parser() -> argparse.ArgumentParser:
     parser.add_argument('--reps', type=int, default=100,
                        help='repeats per exercise')
     
+    parser.add_argument('--voice_enabled', type=str, default='True',
+                       choices=['True', 'False', 'true', 'false'],
+                       help='Enable or disable sound feedback')
+
+    parser.add_argument('--voice_mode', type=str, default='hindi',
+                       choices=['american', 'indian', 'hindi'],
+                       help='Voice Mode for audio feedback')
+
     # Handle unknown positional arguments gracefully (for backward compatibility)
     parser.add_argument('remaining_args', nargs='*',
                        help='Additional positional arguments')
@@ -94,7 +104,9 @@ def parse_config() -> Config:
         fps=args.fps,
         out_fps=args.out_fps,
         exercise=exercise,
-        reps=args.reps
+        reps=args.reps,
+        voice_enabled=args.voice_enabled.lower() == 'true',
+        voice_mode=args.voice_mode
     )
     
     # Print settings (matching your original format)
@@ -102,7 +114,8 @@ def parse_config() -> Config:
           f"--render_all {config.render_all}, --save_video {config.save_video}, "
           f"--lenient_mode {config.lenient_mode}, --fps {config.fps}, "
           f"--out_fps {config.out_fps}, --reps {config.reps}, "
-          f"--exercise {config.exercise}")
+          f"--exercise {config.exercise}, --voice_enabled {config.voice_enabled}, "
+          f"--voice_mode {config.voice_mode}")
     
     _cached_config = config
     return config
