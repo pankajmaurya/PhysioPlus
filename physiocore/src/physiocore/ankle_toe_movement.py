@@ -48,7 +48,13 @@ class PoseTracker:
 
 class AnkleToeMovementTracker:
     def __init__(self, config_path=None):
-        self.debug, self.video, self.render_all, self.save_video, self.lenient_mode = modern_flags.parse_flags()
+        flag_config_obj = modern_flags.parse_config()
+        self.debug = flag_config_obj.debug
+        self.video = flag_config_obj.video
+        self.render_all = flag_config_obj.render_all
+        self.save_video = flag_config_obj.save_video
+        self.lenient_mode = flag_config_obj.lenient_mode
+
         self.config = self._load_config(config_path or self._default_config_path())
 
         self.relax_min = self.config.get("relax_ankle_angle_min", 80)

@@ -1,6 +1,5 @@
 """
 Unified argument parsing module using argparse.
-Replaces the old manual parsing functions: parse_flags, parse_more_flags
 """
 
 import argparse
@@ -47,7 +46,6 @@ def _create_parser() -> argparse.ArgumentParser:
                        choices=['True', 'False', 'true', 'false'],
                        help='Enable lenient mode')
     
-    # Additional flags from parse_more_flags
     parser.add_argument('--out_fps', type=int, default=30,
                        help='Output frames per second')
         
@@ -104,24 +102,6 @@ def parse_config() -> Config:
     _cached_config = config
     return config
 
-# Backward compatibility functions
-def parse_flags():
-    """
-    Backward compatible version of parse_flags()
-    Returns: (debug, video, render_all, save_video, lenient_mode)
-    """
-    config = parse_config()
-    return config.debug, config.video, config.render_all, config.save_video, config.lenient_mode
-
-def parse_more_flags():
-    """
-    Backward compatible version of parse_more_flags()
-    Returns: (debug, video, render_all, save_video, lenient_mode, fps, out_fps)
-    """
-    config = parse_config()
-    return (config.debug, config.video, config.render_all, config.save_video, 
-            config.lenient_mode, config.fps, config.out_fps)
-
 def reset_config():
     """Reset the cached configuration (useful for testing)"""
     global _cached_config
@@ -144,14 +124,7 @@ if __name__ == "__main__":
     print(f"Exercise: {config.exercise}")
     print(f"FPS: {config.fps}")
     print(f"Out FPS: {config.out_fps}")
-    
-    print("\n=== Testing backward compatibility ===")
-    debug, video, render_all, save_video, lenient_mode = parse_flags()
-    print(f"parse_flags: debug={debug}, video={video}")
-    
-    debug, video, render_all, save_video, lenient_mode, fps, out_fps = parse_more_flags()
-    print(f"parse_more_flags: fps={fps}, out_fps={out_fps}")
-        
+            
     print("\n=== Multiple calls test (should use cache) ===")
     config2 = get_config()
     print(f"Same object: {config is config2}")  # Should be True due to caching
