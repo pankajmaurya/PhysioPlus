@@ -194,7 +194,7 @@ class AnkleToeMovementTracker:
         
         self.renderer.render_complete_frame(frame, exercise_state)
 
-    def _pause_loop(self):
+    def pause_loop(self):
         while True:
             key = cv2.waitKey(0) & 0xFF
             if key == ord("r"):
