@@ -6,7 +6,7 @@ import cv2
 import mediapipe as mp
 
 from physiocore.lib import modern_flags, graphics_utils, mp_utils
-from physiocore.lib.graphics_utils import ExerciseInfoRenderer, ExerciseState
+from physiocore.lib.graphics_utils import ExerciseInfoRenderer, ExerciseState, pause_loop
 from physiocore.lib.basic_math import between, calculate_angle, calculate_mid_point
 from physiocore.lib.file_utils import announceForCount, create_output_files, release_files
 from physiocore.lib.landmark_utils import calculate_angle_between_landmarks, lower_body_on_ground, detect_feet_orientation
@@ -151,7 +151,7 @@ class CobraStretchTracker:
                 if key == ord("q"):
                     break
                 elif key == ord("p"):
-                    should_quit = self.pause_loop()
+                    should_quit = pause_loop()
                     if should_quit:
                         break
         
@@ -207,14 +207,6 @@ class CobraStretchTracker:
         )
         
         self.renderer.render_complete_frame(frame, exercise_state)
-
-    def pause_loop(self):
-        while True:
-            key = cv2.waitKey(0) & 0xFF
-            if key == ord("r"):
-                return False
-            elif key == ord("q"):
-                return True
 
     def _cleanup(self):
         if self.cap:
