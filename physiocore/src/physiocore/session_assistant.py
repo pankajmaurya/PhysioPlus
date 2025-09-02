@@ -42,8 +42,8 @@ def do_session():
     voice_mode = config.voice_mode
     voice_enabled = config.voice_enabled
     
-    # exercise_list = sorted(list(_TRACKERS.keys()))
-    exercise_list = [ExerciseType.ANKLE_TOE.value, ExerciseType.SLR.value]
+    exercise_list = sorted(list(_TRACKERS.keys()))
+    # exercise_list = [ExerciseType.ANKLE_TOE.value, ExerciseType.SLR.value]
     
     # Play welcome sound at the beginning of the sequence
     print(f"🎵 Welcome to PhysioPlus Exercise Sequence! (voice_mode: {voice_mode}, (voice_enabled: {voice_enabled}))")
