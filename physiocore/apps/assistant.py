@@ -1,8 +1,9 @@
 import sys
 import time
 from physiocore.tracker import create_tracker, _TRACKERS
-from physiocore.lib.voice_utils import play_welcome_sound_blocking, play_exercise_start_sound, play_session_complete_sound_blocking
+from physiocore.lib.voice_utils import play_welcome_sound_blocking, play_exercise_start_sound, play_set_complete_sound_blocking, play_session_complete_sound_blocking
 from physiocore.lib.modern_flags import parse_config
+from physiocore.lib.exercise_lib import ExerciseType
 
 # Try to import pygame to check if sound is playing
 try:
@@ -41,7 +42,8 @@ def run_exercise_sequence():
     voice_mode = config.voice_mode
     voice_enabled = config.voice_enabled
     
-    exercise_list = sorted(list(_TRACKERS.keys()))
+    # exercise_list = sorted(list(_TRACKERS.keys()))
+    exercise_list = [ExerciseType.ANKLE_TOE.value, ExerciseType.SLR.value]
     
     # Play welcome sound at the beginning of the sequence
     print(f"🎵 Welcome to PhysioPlus Exercise Sequence! (voice_mode: {voice_mode}, (voice_enabled: {voice_enabled}))")
@@ -72,7 +74,7 @@ def run_exercise_sequence():
             if i < len(exercise_list) - 1:
                 print("Taking a 5-second break before next exercise...")
                 
-                play_session_complete_sound_blocking()
+                play_set_complete_sound_blocking()
                 time.sleep(5.0)
                 print("Proceeding to next exercise...")
                 
@@ -83,6 +85,7 @@ def run_exercise_sequence():
             print(f"An error occurred during {exercise}: {e}")
             continue
 
+    play_session_complete_sound_blocking()
     print("Exercise sequence finished.")
 
 if __name__ == "__main__":

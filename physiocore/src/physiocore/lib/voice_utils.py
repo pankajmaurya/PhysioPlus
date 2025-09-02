@@ -26,8 +26,9 @@ class SoundEvent(Enum):
     EXERCISE_START = "start"
     COUNT_INCREMENT = "count"
     MILESTONE_5 = "milestone_5"
-    SESSION_COMPLETE = "complete"
+    SET_COMPLETE = "set_complete"
     WELCOME = "welcome"
+    END_OF_SESSION = "end_of_session"
 
 class SoundManager:
     """
@@ -92,20 +93,24 @@ class SoundManager:
             "american": {
                 SoundEvent.COUNT_INCREMENT.value: "short-sample.wav",
                 SoundEvent.MILESTONE_5.value: "FiveRepeatsCompleted.wav",
-                SoundEvent.SESSION_COMPLETE.value: "WellDoneTakeQuickRest.wav",
-                SoundEvent.WELCOME.value: "Welcome.wav"
+                SoundEvent.SET_COMPLETE.value: "WellDoneTakeQuickRest.wav",
+                SoundEvent.WELCOME.value: "Welcome.wav",
+                SoundEvent.END_OF_SESSION.value: "EndOfSession.wav"
+
             },
             "indian": {
                 SoundEvent.COUNT_INCREMENT.value: "short-sample.wav",
                 SoundEvent.MILESTONE_5.value: "Indian-FiveRepeatsCompleted.wav",
-                SoundEvent.SESSION_COMPLETE.value: "Indian-WellDoneTakeQuickRest.wav",
-                SoundEvent.WELCOME.value: "Indian-welcome.wav"
+                SoundEvent.SET_COMPLETE.value: "Indian-WellDoneTakeQuickRest.wav",
+                SoundEvent.WELCOME.value: "Indian-welcome.wav",
+                SoundEvent.END_OF_SESSION.value: "Indian-EndOfSession.wav"
             },
             "hindi": {
                 SoundEvent.COUNT_INCREMENT.value: "short-sample.wav",
                 SoundEvent.MILESTONE_5.value: "Hindi-FiveRepeatsCompleted.wav",
-                SoundEvent.SESSION_COMPLETE.value: "Hindi-WellDoneTakeQuickRest.wav",
-                SoundEvent.WELCOME.value: "Hindi-welcome.wav"
+                SoundEvent.SET_COMPLETE.value: "Hindi-WellDoneTakeQuickRest.wav",
+                SoundEvent.WELCOME.value: "Hindi-welcome.wav",
+                SoundEvent.END_OF_SESSION.value: "Hindi-EndOfSession.wav"
             }
         }
         
@@ -164,14 +169,21 @@ class SoundManager:
         else:
             self._play_common_sound(SoundEvent.COUNT_INCREMENT)
     
-    
     def play_session_complete(self) -> None:
         """Play session completion sound"""
-        self._play_common_sound(SoundEvent.SESSION_COMPLETE)
+        self._play_common_sound(SoundEvent.END_OF_SESSION)
     
     def play_session_complete_blocking(self) -> None:
         """Play session completion sound (blocking until complete)"""
-        self._play_common_sound_blocking(SoundEvent.SESSION_COMPLETE)
+        self._play_common_sound_blocking(SoundEvent.END_OF_SESSION)
+
+    def play_set_complete(self) -> None:
+        """Play session completion sound"""
+        self._play_common_sound(SoundEvent.SET_COMPLETE)
+    
+    def play_set_complete_blocking(self) -> None:
+        """Play session completion sound (blocking until complete)"""
+        self._play_common_sound_blocking(SoundEvent.SET_COMPLETE)
     
     def set_voice_mode(self, voice_mode: str) -> None:
         """Change the voice_mode for audio feedback"""
@@ -256,6 +268,16 @@ def play_count_sound(count: int) -> None:
     """Play count-based sound"""
     sound_manager = get_sound_manager()
     sound_manager.play_count_sound(count)
+
+def play_set_complete_sound() -> None:
+    """Play set completion sound"""
+    sound_manager = get_sound_manager()
+    sound_manager.play_set_complete()
+
+def play_set_complete_sound_blocking() -> None:
+    """Play set completion sound (blocking until complete)"""
+    sound_manager = get_sound_manager()
+    sound_manager.play_set_complete_blocking()
 
 def play_session_complete_sound() -> None:
     """Play session completion sound"""
