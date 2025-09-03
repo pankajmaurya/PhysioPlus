@@ -58,10 +58,9 @@ class WaistHipRatioCalculator:
     
     def get_waist_hip_measurements(self, landmarks):
         """
-        Extract waist and hip measurements from pose landmarks
-        Uses wrists as a proxy for hip diameter when arms are at sides
-        - Waist: narrowest point between ribs and hips (approximated using shoulder-hip midpoint)
-        - Hip: estimated using wrist distance as proxy when arms are naturally positioned
+        Extract waist and hip measurements from pose landmarks.
+        - Waist: Approximated as the width between points on the torso.
+        - Hip: Estimated using wrist distance as a proxy.
         """
         # Get relevant landmarks
         left_shoulder = landmarks[self.mp_pose.PoseLandmark.LEFT_SHOULDER.value]
@@ -70,106 +69,92 @@ class WaistHipRatioCalculator:
         right_hip = landmarks[self.mp_pose.PoseLandmark.RIGHT_HIP.value]
         left_wrist = landmarks[self.mp_pose.PoseLandmark.LEFT_WRIST.value]
         right_wrist = landmarks[self.mp_pose.PoseLandmark.RIGHT_WRIST.value]
+
+        # Define waist points on both sides of the torso
+        waist_y_level = left_shoulder.y + 0.5 * (left_hip.y - left_shoulder.y)
         
-        # Waist approximation: point between shoulder and hip on the torso
-        # This is a simplified approach - in reality, waist is narrowest point
-        waist_y = left_shoulder.y + 0.6 * (left_hip.y - left_shoulder.y)
-        waist_point = type('Point', (), {
-            'x': left_shoulder.x + 0.3 * (left_hip.x - left_shoulder.x),
-            'y': waist_y,
-            'z': left_shoulder.z
+        left_waist_point = type('Point', (), {
+            'x': (left_shoulder.x + left_hip.x) / 2,
+            'y': waist_y_level,
+            'z': (left_shoulder.z + left_hip.z) / 2
         })()
         
+        right_waist_point = type('Point', (), {
+            'x': (right_shoulder.x + right_hip.x) / 2,
+            'y': waist_y_level,
+            'z': (right_shoulder.z + right_hip.z) / 2
+        })()
+
+        # Calculate waist width as the distance between the two waist points
+        waist_width = self.calculate_distance(left_waist_point, right_waist_point)
+
         # Hip measurement: use wrists as proxy for hip width
-        # This works when arms are naturally at sides or slightly away from body
         wrist_distance = self.calculate_distance(left_wrist, right_wrist)
         
-        # Apply correction factor since wrists are typically slightly wider than hips
-        # when arms are naturally positioned. This factor may need adjustment based on pose.
-        hip_width_from_wrists = wrist_distance * 0.85  # Empirical correction factor
-        
-        # For waist, we need to estimate the width
-        # Use a proportion based on the hip width derived from wrists
-        estimated_waist_width = hip_width_from_wrists * 0.7  # Typical waist-to-hip ratio factor
-        
-        return estimated_waist_width, hip_width_from_wrists, waist_point
-    
+        # Correction factor for hip width from wrists
+        hip_width = wrist_distance * 0.9  # Adjusted empirical correction factor
+
+        return waist_width, hip_width, left_waist_point, right_waist_point
+
     def process_frame(self, frame):
         """Process a single frame and return WHR if person detected"""
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         results = self.pose.process(rgb_frame)
         
+        waist_width, hip_width = 0, 0  # Initialize with default values
+
         if results.pose_landmarks:
-            # Draw pose landmarks
             self.mp_drawing.draw_landmarks(
                 frame, results.pose_landmarks, self.mp_pose.POSE_CONNECTIONS)
             
-            # Check if arms are in suitable position for measurement
             suitable_position, position_message = self.is_suitable_arm_position(
-                results.pose_landmarks.landmark
-            )
+                results.pose_landmarks.landmark)
             
-            # Display position feedback
             color = (0, 255, 0) if suitable_position else (0, 255, 255)
             cv2.putText(frame, position_message, (50, 130), 
                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
             
             if suitable_position:
-                # Calculate measurements only if arms are in good position
-                waist_width, hip_width, waist_point = self.get_waist_hip_measurements(
-                    results.pose_landmarks.landmark
-                )
-            
-            # Calculate ratio
+                waist_width, hip_width, l_waist, r_waist = self.get_waist_hip_measurements(
+                    results.pose_landmarks.landmark)
+                
+                # Draw measurement lines
+                h, w, _ = frame.shape
+                
+                # Waist line
+                lw_x, lw_y = int(l_waist.x * w), int(l_waist.y * h)
+                rw_x, rw_y = int(r_waist.x * w), int(r_waist.y * h)
+                cv2.line(frame, (lw_x, lw_y), (rw_x, rw_y), (0, 255, 0), 2)
+                cv2.putText(frame, 'Waist', (rw_x + 10, rw_y),
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                
+                # Hip line (using wrists)
+                l_wrist = results.pose_landmarks.landmark[self.mp_pose.PoseLandmark.LEFT_WRIST.value]
+                r_wrist = results.pose_landmarks.landmark[self.mp_pose.PoseLandmark.RIGHT_WRIST.value]
+                lw_x, lw_y = int(l_wrist.x * w), int(l_wrist.y * h)
+                rw_x, rw_y = int(r_wrist.x * w), int(r_wrist.y * h)
+                cv2.line(frame, (lw_x, lw_y), (rw_x, rw_y), (255, 0, 0), 2)
+                cv2.putText(frame, 'Hip (via wrists)', (rw_x + 10, rw_y),
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
+
             if hip_width > 0:
                 whr = waist_width / hip_width
                 
-                # Draw measurement lines and text
-                h, w, _ = frame.shape
-                
-                # Convert normalized coordinates to pixel coordinates
-                waist_x = int(waist_point.x * w)
-                waist_y = int(waist_point.y * h)
-                
-                # Draw waist line (horizontal line at waist level)
-                cv2.line(frame, (waist_x - 50, waist_y), (waist_x + 50, waist_y), (0, 255, 0), 2)
-                cv2.putText(frame, 'Waist', (waist_x + 60, waist_y), 
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-                
-                # Draw hip line (using wrists as proxy)
-                left_wrist = results.pose_landmarks.landmark[self.mp_pose.PoseLandmark.LEFT_WRIST.value]
-                right_wrist = results.pose_landmarks.landmark[self.mp_pose.PoseLandmark.RIGHT_WRIST.value]
-                
-                left_wrist_x, left_wrist_y = int(left_wrist.x * w), int(left_wrist.y * h)
-                right_wrist_x, right_wrist_y = int(right_wrist.x * w), int(right_wrist.y * h)
-                
-                cv2.line(frame, (left_wrist_x, left_wrist_y), (right_wrist_x, right_wrist_y), (255, 0, 0), 2)
-                cv2.putText(frame, 'Hip (via wrists)', (right_wrist_x + 10, right_wrist_y), 
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
-                
-                # Display WHR
+                # Display WHR and health category
                 cv2.putText(frame, f'WHR: {whr:.3f}', (50, 50), 
                            cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
                 
-                # Health category (general guidelines)
-                if whr < 0.8:
-                    category = "Low Risk"
-                    color = (0, 255, 0)
-                elif whr < 0.85:
-                    category = "Moderate Risk"
-                    color = (0, 255, 255)
+                if whr < 0.85:
+                    category, color = "Low Risk", (0, 255, 0)
+                elif whr < 0.9:
+                    category, color = "Moderate Risk", (0, 255, 255)
                 else:
-                    category = "High Risk"
-                    color = (0, 0, 255)
+                    category, color = "High Risk", (0, 0, 255)
                 
                 cv2.putText(frame, f'Category: {category}', (50, 90), 
                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
-                
                 return frame, whr
-            else:
-                cv2.putText(frame, 'Adjust arm position for measurement', (50, 170), 
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
-        
+
         return frame, None
     
     def process_video(self, video_path=0):
