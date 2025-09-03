@@ -180,23 +180,28 @@ class WaistHipRatioCalculator:
         cap.release()
         cv2.destroyAllWindows()
     
-    def process_image(self, image_path):
-        """Process a single image"""
+    def process_image(self, image_path, output_path=None):
+        """Process a single image and save the output."""
         frame = cv2.imread(image_path)
         if frame is None:
             print(f"Could not load image: {image_path}")
             return
-        
-        frame, whr = self.process_frame(frame)
-        
+
+        processed_frame, whr = self.process_frame(frame)
+
         if whr:
             print(f"Calculated Waist-Hip Ratio: {whr:.3f}")
         else:
-            print("No person detected in the image")
-        
-        cv2.imshow('Waist-Hip Ratio', frame)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+            print("Could not calculate WHR. Check if person is visible and in a suitable pose.")
+
+        if output_path:
+            cv2.imwrite(output_path, processed_frame)
+            print(f"Saved processed image to {output_path}")
+        else:
+            # Fallback for environments where display is available
+            cv2.imshow('Waist-Hip Ratio', processed_frame)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
 
 # Usage example
 if __name__ == "__main__":
