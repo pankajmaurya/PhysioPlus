@@ -10,6 +10,7 @@ from physiocore.lib.graphics_utils import ExerciseInfoRenderer, ExerciseState, p
 from physiocore.lib.basic_math import between, calculate_angle, calculate_mid_point
 from physiocore.lib.file_utils import announceForCount, create_output_files, release_files
 from physiocore.lib.landmark_utils import calculate_angle_between_landmarks, detect_feet_orientation, upper_body_is_lying_down
+from physiocore.lib.landmark_smoother import LandmarkSmoother
 from physiocore.lib.mp_utils import pose2
 
 mp_drawing = mp.solutions.drawing_utils
@@ -29,43 +30,90 @@ class PoseTracker:
         self.raise_min = config.get("raise_pose_raise_angle_min", 100)
         self.raise_max = config.get("raise_pose_raise_angle_max", 140)
         self.lenient_mode = lenient_mode
+        self.min_frames_for_state_change = config.get("min_frames_for_state_change", 5)
+
+        self.l_rest_counter = 0
+        self.r_rest_counter = 0
+        self.l_raise_counter = 0
+        self.r_raise_counter = 0
 
     def update(self, prone_lying, l_knee, r_knee, l_ankle_close, r_ankle_close, l_raise, r_raise, lknee_high, rknee_high):
-        if not self.l_rest_pose:
-            lenient = self.lenient_mode or (r_ankle_close and between(self.knee_angle_min, r_knee, self.knee_angle_max))
-            self.l_rest_pose = (lenient and prone_lying and l_ankle_close and
-                               between(self.knee_angle_min, l_knee, self.knee_angle_max) and
-                               between(self.rest_raise_min, l_raise, self.rest_raise_max))
-            self.l_raise_pose = False
+        # --- Lenient mode logic ---
+        l_lenient = self.lenient_mode or (r_ankle_close and between(self.knee_angle_min, r_knee, self.knee_angle_max))
+        r_lenient = self.lenient_mode or (l_ankle_close and between(self.knee_angle_min, l_knee, self.knee_angle_max))
 
-        if not self.r_rest_pose:
-            lenient = self.lenient_mode or (l_ankle_close and between(self.knee_angle_min, l_knee, self.knee_angle_max))
-            self.r_rest_pose = (lenient and prone_lying and r_ankle_close and
-                               between(self.knee_angle_min, r_knee, self.knee_angle_max) and
-                               between(self.rest_raise_min, r_raise, self.rest_raise_max))
-            self.r_raise_pose = False
+        # --- Potential states based on current frame ---
+        l_rest_potential = (l_lenient and prone_lying and l_ankle_close and
+                            between(self.knee_angle_min, l_knee, self.knee_angle_max) and
+                            between(self.rest_raise_min, l_raise, self.rest_raise_max))
 
-        if self.l_rest_pose:
-            lenient = self.lenient_mode or (r_ankle_close and between(self.knee_angle_min, r_knee, self.knee_angle_max))
-            self.l_raise_pose = (
-                lenient and prone_lying and lknee_high and
-                between(self.raise_min, l_raise, self.raise_max) and
-                between(self.knee_angle_min, l_knee, self.knee_angle_max)
-            )
+        r_rest_potential = (r_lenient and prone_lying and r_ankle_close and
+                            between(self.knee_angle_min, r_knee, self.knee_angle_max) and
+                            between(self.rest_raise_min, r_raise, self.rest_raise_max))
 
-        if self.r_rest_pose:
-            lenient = self.lenient_mode or (l_ankle_close and between(self.knee_angle_min, l_knee, self.knee_angle_max))
-            self.r_raise_pose = (
-                lenient and prone_lying and rknee_high and
-                between(self.raise_min, r_raise, self.raise_max) and
-                between(self.knee_angle_min, r_knee, self.knee_angle_max)
-            )
+        l_raise_potential = (l_lenient and prone_lying and lknee_high and
+                             between(self.raise_min, l_raise, self.raise_max) and
+                             between(self.knee_angle_min, l_knee, self.knee_angle_max))
+
+        r_raise_potential = (r_lenient and prone_lying and rknee_high and
+                             between(self.raise_min, r_raise, self.raise_max) and
+                             between(self.knee_angle_min, r_knee, self.knee_angle_max))
+
+        # --- Update counters ---
+        if l_rest_potential:
+            self.l_rest_counter += 1
+        else:
+            self.l_rest_counter = 0
+
+        if r_rest_potential:
+            self.r_rest_counter += 1
+        else:
+            self.r_rest_counter = 0
+
+        if l_raise_potential:
+            self.l_raise_counter += 1
+        else:
+            self.l_raise_counter = 0
+
+        if r_raise_potential:
+            self.r_raise_counter += 1
+        else:
+            self.r_raise_counter = 0
+
+        # --- State transitions ---
+        if self.l_rest_counter > self.min_frames_for_state_change:
+            if not self.l_rest_pose:
+                self.l_rest_pose = True
+                self.l_raise_pose = False
+                self.l_raise_counter = 0
+
+        if self.r_rest_counter > self.min_frames_for_state_change:
+            if not self.r_rest_pose:
+                self.r_rest_pose = True
+                self.r_raise_pose = False
+                self.r_raise_counter = 0
+
+        if self.l_raise_counter > self.min_frames_for_state_change:
+            if self.l_rest_pose and not self.l_raise_pose:
+                self.l_raise_pose = True
+                self.l_rest_pose = False
+                self.l_rest_counter = 0
+
+        if self.r_raise_counter > self.min_frames_for_state_change:
+            if self.r_rest_pose and not self.r_raise_pose:
+                self.r_raise_pose = True
+                self.r_rest_pose = False
+                self.r_rest_counter = 0
 
     def reset(self):
         self.l_rest_pose = False
         self.r_rest_pose = False
         self.l_raise_pose = False
         self.r_raise_pose = False
+        self.l_rest_counter = 0
+        self.r_rest_counter = 0
+        self.l_raise_counter = 0
+        self.r_raise_counter = 0
 
 class AnyProneSLRTracker:
     def __init__(self, config_path=None):
@@ -79,6 +127,7 @@ class AnyProneSLRTracker:
 
         self.config = self._load_config(config_path or self._default_config_path())
         self.hold_secs = self.config.get("HOLD_SECS", 5)
+        self.smoother = LandmarkSmoother(alpha=1.0)
 
         self.pose_tracker = PoseTracker(self.config, self.lenient_mode)
         self.count = 0
@@ -86,6 +135,8 @@ class AnyProneSLRTracker:
         self.r_check_timer = False
         self.l_time = None
         self.r_time = None
+        self.cooldown_end_time = 0
+        self.cooldown_period = 2 # seconds
         self.cap = None
         self.output = None
         self.output_with_info = None
@@ -125,9 +176,12 @@ class AnyProneSLRTracker:
             if self.save_video:
                 self.output.write(frame)
 
+            pose_landmarks = self.smoother(pose_landmarks)
+
             if not pose_landmarks:
                 continue
 
+            landmarks = pose_landmarks.landmark
             ground_level, lying_down = upper_body_is_lying_down(landmarks)
             feet_orien = detect_feet_orientation(landmarks)
             # Keypoints extraction
@@ -162,9 +216,9 @@ class AnyProneSLRTracker:
             if self.pose_tracker.r_rest_pose and not self.pose_tracker.r_raise_pose:
                 self.r_check_timer = False
 
-            if prone_lying and self.pose_tracker.l_rest_pose and self.pose_tracker.l_raise_pose:
+            if prone_lying and self.pose_tracker.l_raise_pose:
                 self._handle_pose_hold(frame, leg='left')
-            if prone_lying and self.pose_tracker.r_rest_pose and self.pose_tracker.r_raise_pose:
+            if prone_lying and self.pose_tracker.r_raise_pose:
                 self._handle_pose_hold(frame, leg='right')
 
             self._draw_info(
@@ -191,10 +245,13 @@ class AnyProneSLRTracker:
         return self.count
 
     def start(self):
-        self.process_video(self.video if self.video else 0, display=True)
+        self.process_video(self.video if self.video else 0, display=False)
 
     def _handle_pose_hold(self, frame, leg='left'):
         now = time.time()
+        if now < self.cooldown_end_time:
+            return
+
         if leg == 'left':
             if not self.l_check_timer:
                 self.l_time = now
@@ -206,6 +263,7 @@ class AnyProneSLRTracker:
                     self.pose_tracker.reset()
                     self.l_check_timer = False
                     announceForCount(self.count)
+                    self.cooldown_end_time = now + self.cooldown_period
                 else:
                     cv2.putText(frame, f'hold left leg: {self.hold_secs - now + self.l_time:.2f}',
                                 (250, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
@@ -220,6 +278,7 @@ class AnyProneSLRTracker:
                     self.pose_tracker.reset()
                     self.r_check_timer = False
                     announceForCount(self.count)
+                    self.cooldown_end_time = now + self.cooldown_period
                 else:
                     cv2.putText(frame, f'hold right leg: {self.hold_secs - now + self.r_time:.2f}',
                                 (250, 90), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)

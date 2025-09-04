@@ -17,9 +17,9 @@ try:
     import pygame
     pygame.mixer.init()
     PYGAME_AVAILABLE = True
-except ImportError:
+except (ImportError, Exception):
     PYGAME_AVAILABLE = False
-    print("pygame not available, sound system disabled")
+    print("pygame not available or audio device not found, sound system disabled")
 
 class SoundEvent(Enum):
     """Types of sound events for exercise tracking"""
