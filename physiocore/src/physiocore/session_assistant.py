@@ -1,7 +1,7 @@
 import sys
 import time
 from physiocore.tracker import create_tracker, _TRACKERS
-from physiocore.lib.voice_utils import play_welcome_sound_blocking, play_exercise_start_sound, play_set_complete_sound_blocking, play_session_complete_sound_blocking
+from physiocore.lib.voice_utils import play_welcome_sound_blocking, play_exercise_start_sound, play_set_complete_sound_blocking, play_session_complete_sound_blocking, play_set_complete_sound
 from physiocore.lib.modern_flags import parse_config
 from physiocore.lib.exercise_lib import ExerciseType
 
@@ -43,7 +43,7 @@ def do_session():
     voice_enabled = config.voice_enabled
     
     exercise_list = sorted(list(_TRACKERS.keys()))
-    # exercise_list = [ExerciseType.ANKLE_TOE.value, ExerciseType.SLR.value]
+    # exercise_list = [ExerciseType.NECK_ROT.value]
     
     # Play welcome sound at the beginning of the sequence
     print(f"🎵 Welcome to PhysioPlus Exercise Sequence! (voice_mode: {voice_mode}, (voice_enabled: {voice_enabled}))")
@@ -74,7 +74,7 @@ def do_session():
             if i < len(exercise_list) - 1:
                 print("Taking a 5-second break before next exercise...")
                 
-                play_set_complete_sound_blocking()
+                play_set_complete_sound()
                 time.sleep(5.0)
                 print("Proceeding to next exercise...")
                 

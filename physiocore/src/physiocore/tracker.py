@@ -3,6 +3,7 @@ from physiocore.cobra_stretch import CobraStretchTracker
 from physiocore.bridging import BridgingTracker
 from physiocore.any_straight_leg_raise import AnySLRTracker
 from physiocore.any_prone_straight_leg_raise import AnyProneSLRTracker
+from physiocore.neck_rotation import NeckRotationTracker
 
 from physiocore.lib.exercise_lib import ExerciseType
 
@@ -12,6 +13,7 @@ _TRACKERS = {
     ExerciseType.BRIDGING.value: BridgingTracker,
     ExerciseType.SLR.value: AnySLRTracker,
     ExerciseType.PRONE_SLR.value: AnyProneSLRTracker,
+    ExerciseType.NECK_ROT.value: NeckRotationTracker
 }
 
 
