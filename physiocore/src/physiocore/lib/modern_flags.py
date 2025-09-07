@@ -56,7 +56,7 @@ def _create_parser() -> argparse.ArgumentParser:
     parser.add_argument('--exercise', type=str,
                        help='Name of the exercise to track')
 
-    parser.add_argument('--reps', type=int, default=100,
+    parser.add_argument('--reps', type=int, default=10,
                        help='repeats per exercise')
     
     parser.add_argument('--voice_enabled', type=str, default='True',

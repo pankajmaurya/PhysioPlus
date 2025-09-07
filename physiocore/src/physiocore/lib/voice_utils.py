@@ -26,6 +26,7 @@ class SoundEvent(Enum):
     EXERCISE_START = "start"
     COUNT_INCREMENT = "count"
     MILESTONE_5 = "milestone_5"
+    MILESTONE_10 = "milestone_10"
     SET_COMPLETE = "set_complete"
     WELCOME = "welcome"
     END_OF_SESSION = "end_of_session"
@@ -70,21 +71,24 @@ class SoundManager:
                 ExerciseType.BRIDGING.value: "DoBridgingPoseNow.wav", 
                 ExerciseType.COBRA.value: "DoCobraPoseNow.wav",
                 ExerciseType.PRONE_SLR.value: "DoProneSLRNow.wav",
-                ExerciseType.SLR.value: "DoSLRNow.wav"
+                ExerciseType.SLR.value: "DoSLRNow.wav",
+                ExerciseType.NECK_ROT.value: "DoNeckRotationNow.wav"
             },
             "indian": {
                 ExerciseType.ANKLE_TOE.value: "Indian-DoAnkleToeNow.wav",
                 ExerciseType.BRIDGING.value: "Indian-DoBridgingPoseNow.wav",
                 ExerciseType.COBRA.value: "Indian-DoCobraPoseNow.wav", 
                 ExerciseType.PRONE_SLR.value: "Indian-DoProneSLRNow.wav",
-                ExerciseType.SLR.value: "Indian-DoSLRNow.wav"
+                ExerciseType.SLR.value: "Indian-DoSLRNow.wav",
+                ExerciseType.NECK_ROT.value: "Indian-DoNeckRotationNow.wav"
             },
             "hindi": {
                 ExerciseType.ANKLE_TOE.value: "Hindi-DoAnkleToeNow.wav",
                 ExerciseType.BRIDGING.value: "Hindi-DoBridgingPoseNow.wav",
                 ExerciseType.COBRA.value: "Hindi-DoCobraPoseNow.wav",
                 ExerciseType.PRONE_SLR.value: "Hindi-DoProneSLRNow.wav",
-                ExerciseType.SLR.value: "Hindi-DoSLRNow.wav"
+                ExerciseType.SLR.value: "Hindi-DoSLRNow.wav",
+                ExerciseType.NECK_ROT.value: "Hindi-DoNeckRotationNow.wav"
             }
         }
         
@@ -93,6 +97,7 @@ class SoundManager:
             "american": {
                 SoundEvent.COUNT_INCREMENT.value: "short-sample.wav",
                 SoundEvent.MILESTONE_5.value: "FiveRepeatsCompleted.wav",
+                SoundEvent.MILESTONE_10.value: "set-complete.wav",
                 SoundEvent.SET_COMPLETE.value: "WellDoneTakeQuickRest.wav",
                 SoundEvent.WELCOME.value: "Welcome.wav",
                 SoundEvent.END_OF_SESSION.value: "EndOfSession.wav"
@@ -101,6 +106,7 @@ class SoundManager:
             "indian": {
                 SoundEvent.COUNT_INCREMENT.value: "short-sample.wav",
                 SoundEvent.MILESTONE_5.value: "Indian-FiveRepeatsCompleted.wav",
+                SoundEvent.MILESTONE_10.value: "set-complete.wav",
                 SoundEvent.SET_COMPLETE.value: "Indian-WellDoneTakeQuickRest.wav",
                 SoundEvent.WELCOME.value: "Indian-welcome.wav",
                 SoundEvent.END_OF_SESSION.value: "Indian-EndOfSession.wav"
@@ -108,6 +114,7 @@ class SoundManager:
             "hindi": {
                 SoundEvent.COUNT_INCREMENT.value: "short-sample.wav",
                 SoundEvent.MILESTONE_5.value: "Hindi-FiveRepeatsCompleted.wav",
+                SoundEvent.MILESTONE_10.value: "set-complete.wav",
                 SoundEvent.SET_COMPLETE.value: "Hindi-WellDoneTakeQuickRest.wav",
                 SoundEvent.WELCOME.value: "Hindi-welcome.wav",
                 SoundEvent.END_OF_SESSION.value: "Hindi-EndOfSession.wav"
@@ -164,8 +171,10 @@ class SoundManager:
         if not self.enabled:
             return
             
-        if count % 5 == 0 and count > 0:
+        if count == 5:
             self._play_common_sound(SoundEvent.MILESTONE_5)
+        elif count % 10 == 0:
+            self._play_common_sound(SoundEvent.MILESTONE_10)
         else:
             self._play_common_sound(SoundEvent.COUNT_INCREMENT)
     
