@@ -4,12 +4,14 @@ import time
 from threading import Thread
 import cv2
 import mediapipe as mp
+from mediapipe.framework.formats import landmark_pb2
 
 from physiocore.lib import modern_flags, graphics_utils, mp_utils
 from physiocore.lib.graphics_utils import ExerciseInfoRenderer, ExerciseState, pause_loop
 from physiocore.lib.basic_math import between, calculate_angle, calculate_mid_point
 from physiocore.lib.file_utils import announceForCount, create_output_files, release_files
 from physiocore.lib.landmark_utils import calculate_angle_between_landmarks, detect_feet_orientation, upper_body_is_lying_down
+from physiocore.lib.landmark_smoother import LandmarkSmoother
 from physiocore.lib.mp_utils import pose2
 
 mp_drawing = mp.solutions.drawing_utils
@@ -30,7 +32,7 @@ class PoseTracker:
         self.raise_max = config.get("raise_pose_raise_angle_max", 140)
         self.lenient_mode = lenient_mode
 
-    def update(self, prone_lying, l_knee, r_knee, l_ankle_close, r_ankle_close, l_raise, r_raise, lknee_high, rknee_high):
+    def update(self, prone_lying, left_closer, l_knee, r_knee, l_ankle_close, r_ankle_close, l_raise, r_raise, lknee_high, rknee_high):
         if not self.l_rest_pose:
             lenient = self.lenient_mode or (r_ankle_close and between(self.knee_angle_min, r_knee, self.knee_angle_max))
             self.l_rest_pose = (lenient and prone_lying and l_ankle_close and
@@ -45,21 +47,35 @@ class PoseTracker:
                                between(self.rest_raise_min, r_raise, self.rest_raise_max))
             self.r_raise_pose = False
 
+        possible_l_raise_pose = False
         if self.l_rest_pose:
             lenient = self.lenient_mode or (r_ankle_close and between(self.knee_angle_min, r_knee, self.knee_angle_max))
-            self.l_raise_pose = (
+            possible_l_raise_pose = (
                 lenient and prone_lying and lknee_high and
                 between(self.raise_min, l_raise, self.raise_max) and
                 between(self.knee_angle_min, l_knee, self.knee_angle_max)
             )
-
+            
+        possible_r_raise_pose = False
         if self.r_rest_pose:
             lenient = self.lenient_mode or (l_ankle_close and between(self.knee_angle_min, l_knee, self.knee_angle_max))
-            self.r_raise_pose = (
+            
+            possible_r_raise_pose = (
                 lenient and prone_lying and rknee_high and
                 between(self.raise_min, r_raise, self.raise_max) and
                 between(self.knee_angle_min, r_knee, self.knee_angle_max)
             )
+
+        self.l_raise_pose = possible_l_raise_pose and not possible_r_raise_pose
+        self.r_raise_pose = possible_r_raise_pose and not possible_l_raise_pose
+
+        if possible_l_raise_pose and possible_r_raise_pose:
+            # break tie somehow?
+            if left_closer:
+                self.l_raise_pose = True
+            else:
+                self.r_raise_pose = True
+
 
     def reset(self):
         self.l_rest_pose = False
@@ -81,6 +97,7 @@ class AnyProneSLRTracker:
         self.hold_secs = self.config.get("HOLD_SECS", 5)
 
         self.pose_tracker = PoseTracker(self.config, self.lenient_mode)
+        self.smoother = LandmarkSmoother()
         self.count = 0
         self.l_check_timer = False
         self.r_check_timer = False
@@ -116,9 +133,18 @@ class AnyProneSLRTracker:
             self.output, self.output_with_info = create_output_files(self.cap, self.save_video)
 
         while True:
-            success, landmarks, frame, pose_landmarks = mp_utils.processFrameAndGetLandmarks(self.cap, pose2)
+            success, raw_landmarks, frame, pose_landmarks = mp_utils.processFrameAndGetLandmarks(self.cap, pose2)
             if not success:
                 break
+            landmarks = None
+            if raw_landmarks:
+                new_landmarks = landmark_pb2.NormalizedLandmarkList()
+                for lm in raw_landmarks:
+                    new_landmarks.landmark.add().CopyFrom(lm)
+
+                pose_landmarks = self.smoother(new_landmarks)
+                landmarks = pose_landmarks.landmark
+
             if frame is None:
                 continue
 
@@ -149,10 +175,18 @@ class AnyProneSLRTracker:
             lknee_high = lheel.y < lshld.y
             rknee_high = rheel.y < rshld.y
 
+            left_closer = False
+
             prone_lying = lying_down and (feet_orien == "Feet are downwards" or feet_orien == "either feet is downward")
+
+            if prone_lying:
+                if lknee.z < rknee.z:
+                    left_closer = True
+                if lhip.z < rhip.z:
+                    left_closer = True
             # print(f'feet are {feet_orien}')
 
-            self.pose_tracker.update(prone_lying,
+            self.pose_tracker.update(prone_lying, left_closer,
                                     l_knee_angle, r_knee_angle, l_ankle_close, r_ankle_close,
                                     l_raise_angle, r_raise_angle, lknee_high, rknee_high)
 
