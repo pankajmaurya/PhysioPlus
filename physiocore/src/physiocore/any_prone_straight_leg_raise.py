@@ -127,6 +127,9 @@ class AnyProneSLRTracker:
 
         self.config = self._load_config(config_path or self._default_config_path())
         self.hold_secs = self.config.get("HOLD_SECS", 5)
+        # Alpha is set to 1.0 to effectively disable smoothing. The robust state
+        # machine is the primary mechanism for stability. The smoother is left
+        # in the code for potential future use or tuning.
         self.smoother = LandmarkSmoother(alpha=1.0)
 
         self.pose_tracker = PoseTracker(self.config, self.lenient_mode)
@@ -216,6 +219,9 @@ class AnyProneSLRTracker:
             if self.pose_tracker.r_rest_pose and not self.pose_tracker.r_raise_pose:
                 self.r_check_timer = False
 
+            # The check for rest_pose is removed here because the new state
+            # machine in PoseTracker already ensures that a raise can only
+            # happen after a rest.
             if prone_lying and self.pose_tracker.l_raise_pose:
                 self._handle_pose_hold(frame, leg='left')
             if prone_lying and self.pose_tracker.r_raise_pose:
@@ -245,7 +251,7 @@ class AnyProneSLRTracker:
         return self.count
 
     def start(self):
-        self.process_video(self.video if self.video else 0, display=False)
+        self.process_video(self.video if self.video else 0, display=True)
 
     def _handle_pose_hold(self, frame, leg='left'):
         now = time.time()

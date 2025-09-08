@@ -6,5 +6,5 @@
     "raise_pose_raise_angle_min":120,
     "raise_pose_raise_angle_max":164,
     "HOLD_SECS":2,
-    "min_frames_for_state_change": 5
+    "min_frames_for_state_change": 7
 }
