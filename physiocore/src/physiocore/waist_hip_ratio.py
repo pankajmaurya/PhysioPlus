@@ -213,6 +213,11 @@ if __name__ == "__main__":
     # calculator.process_video(0)
     
     # For image file (uncomment to use)
+    calculator.process_image('input1.png')
+    calculator.process_image('input2.png')
+    calculator.process_image('input3.png')
+    calculator.process_image('input4.png')
+    calculator.process_image('input5.png')
     calculator.process_image('input6.png')
     calculator.process_image('input7.png')
     
