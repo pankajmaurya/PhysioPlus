@@ -237,7 +237,7 @@ class HeelSlidesTracker:
             smoothed_landmarks = self.landmark_smoother.update_landmarks(landmarks)
             if not smoothed_landmarks:
                 if display:
-                    self._draw_info(frame, None, None, None, None, None, None, None, None, None, None, pose_landmarks, display)
+                    self._draw_info(frame, None, None, None, None, None, None, None, None, None, None, None, pose_landmarks, display)
                     if cv2.waitKey(delay) & 0xFF == ord('q'): break
                 continue
 
