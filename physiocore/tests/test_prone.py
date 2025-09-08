@@ -7,20 +7,14 @@ class TestAnyProneSLRTracker(unittest.TestCase):
         tracker = AnyProneSLRTracker()
         
         # Override HOLD_SECS
-        tracker.hold_secs = 6.0
+        tracker.hold_secs = 8.0
         
         # Get the path to the video file
         video_path = os.path.join(os.path.dirname(__file__), 'prone-long-hold.mp4')
         
         # Process the video without displaying GUI
-        counts = []
-        for _ in range(3):
-            tracker.count = 0  # Reset count before each run
-            count = tracker.process_video(video_path=video_path, display=False)
-            counts.append(count)
-
-        best_count = max(counts)
-        self.assertEqual(best_count, 1)
+        count = tracker.process_video(video_path=video_path, display=True)
+        self.assertEqual(count, 1)
 
 
     def test_any_prone_video(self):
