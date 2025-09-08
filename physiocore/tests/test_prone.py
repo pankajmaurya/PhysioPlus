@@ -13,7 +13,7 @@ class TestAnyProneSLRTracker(unittest.TestCase):
         video_path = os.path.join(os.path.dirname(__file__), 'prone-long-hold.mp4')
         
         # Process the video without displaying GUI
-        count = tracker.process_video(video_path=video_path, display=True)
+        count = tracker.process_video(video_path=video_path, display=False)
         # In development mode, try running with display ON too.
         # count = tracker.process_video(video_path=video_path, display=True)
         
@@ -31,7 +31,7 @@ class TestAnyProneSLRTracker(unittest.TestCase):
         video_path = os.path.join(os.path.dirname(__file__), 'prone-mini-test.mp4')
         
         # Process the video without displaying GUI
-        count = tracker.process_video(video_path=video_path, display=True)
+        count = tracker.process_video(video_path=video_path, display=False)
         # In development mode, try running with display ON too.
         # count = tracker.process_video(video_path=video_path, display=True)
         
