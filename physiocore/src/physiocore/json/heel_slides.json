@@ -1,0 +1,10 @@
+{
+    "knee_angle_extension_min": 160,
+    "knee_angle_extension_max": 180,
+    "knee_angle_flexion_min": 45,
+    "knee_angle_flexion_max": 90,
+    "heel_hip_min_distance_ratio": 0.1,
+    "heel_hip_max_distance_ratio": 0.5,
+    "HOLD_SECS": 1,
+    "TEMPORAL_FILTER_SIZE": 5
+}

@@ -8,3 +8,4 @@ class ExerciseType(Enum):
     PRONE_SLR = "any_prone_slr"
     SLR = "any_slr"
     NECK_ROT = "neck_rotation"
+    HEEL_SLIDES = "heel_slides"
