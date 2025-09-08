@@ -1,3 +1,6 @@
 *.pyc
 dist/
 .DS_Store
+# Egg info
+physiocore.egg-info/
+physiocore/src/physiocore.egg-info/

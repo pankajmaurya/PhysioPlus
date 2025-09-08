@@ -10,6 +10,7 @@ from physiocore.lib.graphics_utils import ExerciseInfoRenderer, ExerciseState, p
 from physiocore.lib.basic_math import between, calculate_angle, calculate_mid_point
 from physiocore.lib.file_utils import announceForCount, create_output_files, release_files
 from physiocore.lib.landmark_utils import calculate_angle_between_landmarks, detect_feet_orientation, upper_body_is_lying_down
+from physiocore.lib.landmark_smoother import LandmarkSmoother
 from physiocore.lib.mp_utils import pose2
 
 mp_drawing = mp.solutions.drawing_utils
@@ -81,6 +82,7 @@ class AnyProneSLRTracker:
         self.hold_secs = self.config.get("HOLD_SECS", 5)
 
         self.pose_tracker = PoseTracker(self.config, self.lenient_mode)
+        self.smoother = LandmarkSmoother()
         self.count = 0
         self.l_check_timer = False
         self.r_check_timer = False
@@ -116,9 +118,20 @@ class AnyProneSLRTracker:
             self.output, self.output_with_info = create_output_files(self.cap, self.save_video)
 
         while True:
-            success, landmarks, frame, pose_landmarks = mp_utils.processFrameAndGetLandmarks(self.cap, pose2)
+            success, raw_landmarks, frame, pose_landmarks = mp_utils.processFrameAndGetLandmarks(self.cap, pose2)
             if not success:
                 break
+
+            landmarks = raw_landmarks
+            if raw_landmarks:
+                from mediapipe.framework.formats import landmark_pb2
+                new_landmarks = landmark_pb2.NormalizedLandmarkList()
+                for lm in raw_landmarks:
+                    new_landmarks.landmark.add().CopyFrom(lm)
+
+                pose_landmarks = self.smoother(new_landmarks)
+                landmarks = pose_landmarks.landmark
+
             if frame is None:
                 continue
 
