@@ -7,7 +7,7 @@ name = "physiocore"
 version = "0.3.4"
 description = "A physiotherapy exercise toolkit with movement scripts, utilities, and resources."
 readme = "README.md"
-requires-python = ">=3.10.11,<=3.12.11"
+requires-python = ">=3.10.11,<=3.10.18"
 license = { file = "LICENSE" }
 authors = [
     { name = "Pankaj Maurya", email = "pankajmaurya@gmail.com" }

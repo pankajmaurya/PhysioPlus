@@ -118,16 +118,20 @@ class AnyProneSLRTracker:
             self.output, self.output_with_info = create_output_files(self.cap, self.save_video)
 
         while True:
-            success, landmarks, frame, pose_landmarks = mp_utils.processFrameAndGetLandmarks(self.cap, pose2)
+            success, raw_landmarks, frame, pose_landmarks = mp_utils.processFrameAndGetLandmarks(self.cap, pose2)
             if not success:
                 break
 
-            if landmarks:
+            landmarks = raw_landmarks
+            if raw_landmarks:
                 from mediapipe.framework.formats import landmark_pb2
                 new_landmarks = landmark_pb2.NormalizedLandmarkList()
-                for lm in landmarks:
+                for lm in raw_landmarks:
                     new_landmarks.landmark.add().CopyFrom(lm)
-                landmarks = self.smoother(new_landmarks)
+
+                pose_landmarks = self.smoother(new_landmarks)
+                landmarks = pose_landmarks.landmark
+
             if frame is None:
                 continue
 
@@ -140,14 +144,14 @@ class AnyProneSLRTracker:
             ground_level, lying_down = upper_body_is_lying_down(landmarks)
             feet_orien = detect_feet_orientation(landmarks)
             # Keypoints extraction
-            lshoulder = landmarks.landmark[mp_pose.PoseLandmark.LEFT_SHOULDER.value]
-            rshoulder = landmarks.landmark[mp_pose.PoseLandmark.RIGHT_SHOULDER.value]
+            lshoulder = landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value]
+            rshoulder = landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value]
             shoulder_mid = calculate_mid_point((lshoulder.x, lshoulder.y), (rshoulder.x, rshoulder.y))
-            lhip, rhip = landmarks.landmark[mp_pose.PoseLandmark.LEFT_HIP.value], landmarks.landmark[mp_pose.PoseLandmark.RIGHT_HIP.value]
-            lknee, rknee = landmarks.landmark[mp_pose.PoseLandmark.LEFT_KNEE.value], landmarks.landmark[mp_pose.PoseLandmark.RIGHT_KNEE.value]
-            lankle, rankle = landmarks.landmark[mp_pose.PoseLandmark.LEFT_ANKLE.value], landmarks.landmark[mp_pose.PoseLandmark.RIGHT_ANKLE.value]
+            lhip, rhip = landmarks[mp_pose.PoseLandmark.LEFT_HIP.value], landmarks[mp_pose.PoseLandmark.RIGHT_HIP.value]
+            lknee, rknee = landmarks[mp_pose.PoseLandmark.LEFT_KNEE.value], landmarks[mp_pose.PoseLandmark.RIGHT_KNEE.value]
+            lankle, rankle = landmarks[mp_pose.PoseLandmark.LEFT_ANKLE.value], landmarks[mp_pose.PoseLandmark.RIGHT_ANKLE.value]
             lshld, rshld = lshoulder, rshoulder
-            lheel, rheel = landmarks.landmark[mp_pose.PoseLandmark.LEFT_HEEL.value], landmarks.landmark[mp_pose.PoseLandmark.RIGHT_HEEL.value]
+            lheel, rheel = landmarks[mp_pose.PoseLandmark.LEFT_HEEL.value], landmarks[mp_pose.PoseLandmark.RIGHT_HEEL.value]
 
             l_knee_angle = calculate_angle_between_landmarks(lhip, lknee, lankle)
             r_knee_angle = calculate_angle_between_landmarks(rhip, rknee, rankle)
