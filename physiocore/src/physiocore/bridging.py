@@ -79,11 +79,13 @@ class BridgingTracker:
 
         self.config = self._load_config(config_path or self._default_config_path())
         self.hold_secs = self.config.get("HOLD_SECS", 5)
+        self.adaptive_hold_secs = self.hold_secs
 
         self.pose_tracker = PoseTracker(self.config, self.lenient_mode)
         self.count = 0
-        self.check_timer = False
-        self.old_time = None
+        self.rep_in_progress = False
+        self.hold_start_time = None
+        self.rep_counted_this_hold = False
         self.cap = None
         self.output = None
         self.output_with_info = None
@@ -147,18 +149,44 @@ class BridgingTracker:
                 l_raise_angle, r_raise_angle
             )
 
-            if self.pose_tracker.resting_pose and not self.pose_tracker.raise_pose:
-                self.check_timer = False
-
-            if self.pose_tracker.resting_pose and self.pose_tracker.raise_pose:
-                self._handle_pose_hold(frame if display else None)
+            if self.pose_tracker.raise_pose:
+                if not self.rep_in_progress:
+                    self.rep_in_progress = True
+                    self.hold_start_time = time.time()
+                    self.rep_counted_this_hold = False
+                    print("[Bridging] time for raise", self.hold_start_time)
+                else:
+                    hold_duration = time.time() - self.hold_start_time
+                    remaining_time = self.adaptive_hold_secs - hold_duration
+                    if frame is not None and remaining_time > 0:
+                        cv2.putText(
+                            frame,
+                            f'hold pose: {remaining_time:.2f}',
+                            (250, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2
+                        )
+                    if hold_duration >= self.adaptive_hold_secs and not self.rep_counted_this_hold:
+                        self.count += 1
+                        announceForCount(self.count)
+                        self.rep_counted_this_hold = True
+            else:
+                if self.rep_in_progress:
+                    actual_hold_time = time.time() - self.hold_start_time
+                    if actual_hold_time >= self.adaptive_hold_secs:
+                        # Adaptive logic
+                        extra_hold = actual_hold_time - self.adaptive_hold_secs
+                        self.adaptive_hold_secs += extra_hold * 0.5
+                        print(f"New hold time: {self.adaptive_hold_secs:.2f}s")
+                    self.pose_tracker.reset()
+                self.rep_in_progress = False
+                self.hold_start_time = None
+                self.rep_counted_this_hold = False
 
             if display:
                 if self.reps and self.count >= self.reps:
                     break
                 self._draw_info(
                     frame, lying_down, l_knee_angle, r_knee_angle, l_raise_angle, r_raise_angle,
-                    l_ankle_close, r_ankle_close, self.pose_tracker.resting_pose, self.pose_tracker.raise_pose, 
+                    l_ankle_close, r_ankle_close, self.pose_tracker.resting_pose, self.pose_tracker.raise_pose,
                     pose_landmarks, display
                 )
 
@@ -175,25 +203,6 @@ class BridgingTracker:
 
         self._cleanup(display=display)
         return self.count
-
-    def _handle_pose_hold(self, frame=None):
-        if not self.check_timer:
-            self.old_time = time.time()
-            self.check_timer = True
-            print("[Bridging] time for raise", self.old_time)
-        else:
-            cur_time = time.time()
-            if cur_time - self.old_time > self.hold_secs:
-                self.count += 1
-                self.pose_tracker.reset()
-                self.check_timer = False
-                announceForCount(self.count)
-            elif frame is not None:
-                cv2.putText(
-                    frame,
-                    f'hold pose: {self.hold_secs - cur_time + self.old_time:.2f}',
-                    (250, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2
-                )
 
     def _draw_info(self, frame, lying_down, l_knee_angle, r_knee_angle, l_raise_angle, r_raise_angle,
                    l_ankle_close, r_ankle_close, resting_pose, raise_pose, pose_landmarks, display):

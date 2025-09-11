@@ -96,12 +96,17 @@ class AnySLRTracker:
         if self.video:
             self.hold_secs = 8.0 * self.hold_secs / 30.0
 
+        self.l_adaptive_hold_secs = self.hold_secs
+        self.r_adaptive_hold_secs = self.hold_secs
+
         self.pose_tracker = PoseTracker(self.config, self.lenient_mode)
         self.count = 0
-        self.l_check_timer = False
-        self.r_check_timer = False
-        self.l_time = None
-        self.r_time = None
+        self.l_rep_in_progress = False
+        self.r_rep_in_progress = False
+        self.l_hold_start_time = None
+        self.r_hold_start_time = None
+        self.l_rep_counted_this_hold = False
+        self.r_rep_counted_this_hold = False
         self.cap = None
         self.output = None
         self.output_with_info = None
@@ -126,11 +131,11 @@ class AnySLRTracker:
     def process_video(self, video_path=None, display=True):
         self.video = video_path if video_path is not None else self.video
         self.cap = cv2.VideoCapture(self.video if self.video else 0)
-        
+
         if not self.cap.isOpened():
             print(f"Error opening video stream or file: {self.video}")
             return 0
-            
+
         input_fps = int(self.cap.get(cv2.CAP_PROP_FPS)) or 30
         delay = int(1000 / input_fps)
         if self.save_video:
@@ -176,15 +181,67 @@ class AnySLRTracker:
                 l_raise_angle, r_raise_angle, lknee_high, rknee_high, side_lying
             )
 
-            if self.pose_tracker.l_rest_pose and not self.pose_tracker.l_raise_pose:
-                self.l_check_timer = False
-            if self.pose_tracker.r_rest_pose and not self.pose_tracker.r_raise_pose:
-                self.r_check_timer = False
+            # Left leg
+            if self.pose_tracker.l_raise_pose:
+                if not self.l_rep_in_progress:
+                    self.l_rep_in_progress = True
+                    self.l_hold_start_time = time.time()
+                    self.l_rep_counted_this_hold = False
+                    print("[Any SLR] time for left raise", self.l_hold_start_time)
+                else:
+                    hold_duration = time.time() - self.l_hold_start_time
+                    remaining_time = self.l_adaptive_hold_secs - hold_duration
+                    if frame is not None and remaining_time > 0:
+                        cv2.putText(
+                            frame, f'hold left leg: {remaining_time:.2f}',
+                            (250, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2
+                        )
+                    if hold_duration >= self.l_adaptive_hold_secs and not self.l_rep_counted_this_hold:
+                        self.count += 1
+                        announceForCount(self.count)
+                        self.l_rep_counted_this_hold = True
+            else:
+                if self.l_rep_in_progress:
+                    actual_hold_time = time.time() - self.l_hold_start_time
+                    if actual_hold_time >= self.l_adaptive_hold_secs:
+                        extra_hold = actual_hold_time - self.l_adaptive_hold_secs
+                        self.l_adaptive_hold_secs += extra_hold * 0.5
+                        print(f"New left hold time: {self.l_adaptive_hold_secs:.2f}s")
+                    self.pose_tracker.reset()
+                self.l_rep_in_progress = False
+                self.l_hold_start_time = None
+                self.l_rep_counted_this_hold = False
 
-            if lying_down and self.pose_tracker.l_rest_pose and self.pose_tracker.l_raise_pose:
-                self._handle_pose_hold(frame, leg='left')
-            if lying_down and self.pose_tracker.r_rest_pose and self.pose_tracker.r_raise_pose:
-                self._handle_pose_hold(frame, leg='right')
+            # Right leg
+            if self.pose_tracker.r_raise_pose:
+                if not self.r_rep_in_progress:
+                    self.r_rep_in_progress = True
+                    self.r_hold_start_time = time.time()
+                    self.r_rep_counted_this_hold = False
+                    print("[Any SLR] time for right raise", self.r_hold_start_time)
+                else:
+                    hold_duration = time.time() - self.r_hold_start_time
+                    remaining_time = self.r_adaptive_hold_secs - hold_duration
+                    if frame is not None and remaining_time > 0:
+                        cv2.putText(
+                            frame, f'hold right leg: {remaining_time:.2f}',
+                            (250, 90), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2
+                        )
+                    if hold_duration >= self.r_adaptive_hold_secs and not self.r_rep_counted_this_hold:
+                        self.count += 1
+                        announceForCount(self.count)
+                        self.r_rep_counted_this_hold = True
+            else:
+                if self.r_rep_in_progress:
+                    actual_hold_time = time.time() - self.r_hold_start_time
+                    if actual_hold_time >= self.r_adaptive_hold_secs:
+                        extra_hold = actual_hold_time - self.r_adaptive_hold_secs
+                        self.r_adaptive_hold_secs += extra_hold * 0.5
+                        print(f"New right hold time: {self.r_adaptive_hold_secs:.2f}s")
+                    self.pose_tracker.reset()
+                self.r_rep_in_progress = False
+                self.r_hold_start_time = None
+                self.r_rep_counted_this_hold = False
 
             self._draw_info(
                 frame, lying_down, l_knee_angle, r_knee_angle, l_raise_angle, r_raise_angle,
@@ -207,41 +264,6 @@ class AnySLRTracker:
         
         self._cleanup()
         return self.count
-
-    def _handle_pose_hold(self, frame, leg='left'):
-        now = time.time()
-        if leg == 'left':
-            if not self.l_check_timer:
-                self.l_time = now
-                self.l_check_timer = True
-                print("[Any SLR] time for left raise", self.l_time)
-            else:
-                if now - self.l_time > self.hold_secs:
-                    self.count += 1
-                    self.pose_tracker.reset()
-                    self.l_check_timer = False
-                    announceForCount(self.count)
-                else:
-                    cv2.putText(
-                        frame, f'hold left leg: {self.hold_secs - now + self.l_time:.2f}',
-                        (250, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2
-                    )
-        elif leg == 'right':
-            if not self.r_check_timer:
-                self.r_time = now
-                self.r_check_timer = True
-                print("[Any SLR] time for right raise", self.r_time)
-            else:
-                if now - self.r_time > self.hold_secs:
-                    self.count += 1
-                    self.pose_tracker.reset()
-                    self.r_check_timer = False
-                    announceForCount(self.count)
-                else:
-                    cv2.putText(
-                        frame, f'hold right leg: {self.hold_secs - now + self.r_time:.2f}',
-                        (250, 90), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2
-                    )
 
     def _draw_info(self, frame, lying_down, l_knee_angle, r_knee_angle, l_raise_angle, r_raise_angle,
                    l_ankle_close, r_ankle_close, l_resting, r_resting, l_raise, r_raise, pose_landmarks, display):

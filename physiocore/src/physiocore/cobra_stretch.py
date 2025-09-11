@@ -61,11 +61,13 @@ class CobraStretchTracker:
 
         self.config = self._load_config(config_path or self._default_config_path())
         self.hold_secs = self.config.get("HOLD_SECS", 3)
+        self.adaptive_hold_secs = self.hold_secs
 
         self.pose_tracker = PoseTracker(self.config, self.lenient_mode)
         self.count = 0
-        self.check_timer = False
-        self.start_time = None
+        self.rep_in_progress = False
+        self.hold_start_time = None
+        self.rep_counted_this_hold = False
         self.cap = None
         self.output = None
         self.output_with_info = None
@@ -90,11 +92,11 @@ class CobraStretchTracker:
     def process_video(self, video_path=None, display=True):
         self.video = video_path if video_path is not None else self.video
         self.cap = cv2.VideoCapture(self.video if self.video else 0)
-        
+
         if not self.cap.isOpened():
             print(f"Error opening video stream or file: {self.video}")
             return 0
-            
+
         input_fps = int(self.cap.get(cv2.CAP_PROP_FPS)) or 30
         delay = int(1000 / input_fps)
         if self.save_video:
@@ -140,10 +142,38 @@ class CobraStretchTracker:
                 head_angle, lower_body_prone
             )
             # Timer logic
-            if self.pose_tracker.resting_pose and not self.pose_tracker.raise_pose:
-                self.check_timer = False
-            if self.pose_tracker.resting_pose and self.pose_tracker.raise_pose:
-                self._handle_pose_hold(frame)
+            if self.pose_tracker.raise_pose:
+                if not self.rep_in_progress:
+                    self.rep_in_progress = True
+                    self.hold_start_time = time.time()
+                    self.rep_counted_this_hold = False
+                    print("[Cobra] time for raise", self.hold_start_time)
+                else:
+                    hold_duration = time.time() - self.hold_start_time
+                    remaining_time = self.adaptive_hold_secs - hold_duration
+                    if frame is not None and remaining_time > 0:
+                        cv2.putText(
+                            frame,
+                            f'hold pose: {remaining_time:.2f}',
+                            (250, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2
+                        )
+                    if hold_duration >= self.adaptive_hold_secs and not self.rep_counted_this_hold:
+                        self.count += 1
+                        announceForCount(self.count)
+                        self.rep_counted_this_hold = True
+            else:
+                if self.rep_in_progress:
+                    actual_hold_time = time.time() - self.hold_start_time
+                    if actual_hold_time >= self.adaptive_hold_secs:
+                        # Adaptive logic
+                        extra_hold = actual_hold_time - self.adaptive_hold_secs
+                        self.adaptive_hold_secs += extra_hold * 0.5
+                        print(f"New hold time: {self.adaptive_hold_secs:.2f}s")
+                    self.pose_tracker.reset()
+                self.rep_in_progress = False
+                self.hold_start_time = None
+                self.rep_counted_this_hold = False
+
             # Draw info and pose
             if display:
                 self._draw_info(
@@ -153,7 +183,7 @@ class CobraStretchTracker:
                 )
             if self.save_video and self.debug:
                 self.output_with_info.write(frame)
-            
+
             if display:
                 if self.reps and self.count >= self.reps:
                     break
@@ -164,29 +194,9 @@ class CobraStretchTracker:
                     should_quit = pause_loop()
                     if should_quit:
                         break
-        
+
         self._cleanup()
         return self.count
-
-    def _handle_pose_hold(self, frame):
-        if not self.check_timer:
-            self.start_time = time.time()
-            self.check_timer = True
-            print("[Cobra] time for raise", self.start_time)
-        else:
-            cur_time = time.time()
-            if cur_time - self.start_time > self.hold_secs:
-                self.count += 1
-                self.pose_tracker.reset()
-                self.check_timer = False
-                announceForCount(self.count)
- 
-            else:
-                cv2.putText(
-                    frame,
-                    f"hold pose: {self.hold_secs - cur_time + self.start_time:.2f}",
-                    (250, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2
-                )
 
     def _draw_info(self, frame, angle_left_elb, angle_right_elb, raise_angle, head_angle,
                    l_wrist_close, r_wrist_close, l_wrist_near_torse, r_wrist_near_torse,
