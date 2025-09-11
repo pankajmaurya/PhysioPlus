@@ -8,6 +8,7 @@ class TestAnyProneSLRTracker(unittest.TestCase):
         
         # Override HOLD_SECS
         tracker.hold_secs = 4.0
+        tracker.debug = True
         
         # Get the path to the video file
         video_path = os.path.join(os.path.dirname(__file__), 'prone-SLR-hold-4sec-pankaj1.mp4')
