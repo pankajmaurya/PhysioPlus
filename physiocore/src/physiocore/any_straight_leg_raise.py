@@ -11,6 +11,7 @@ from physiocore.lib.basic_math import between, calculate_mid_point, calculate_si
 from physiocore.lib.file_utils import announceForCount, create_output_files, release_files
 from physiocore.lib.landmark_utils import calculate_angle_between_landmarks, upper_body_is_lying_down
 from physiocore.lib.mp_utils import pose2, processFrameAndGetLandmarks
+from physiocore.lib.timer_utils import AdaptiveHoldTimer
 
 mp_drawing = mp.solutions.drawing_utils
 mp_pose = mp.solutions.pose
@@ -96,17 +97,10 @@ class AnySLRTracker:
         if self.video:
             self.hold_secs = 8.0 * self.hold_secs / 30.0
 
-        self.l_adaptive_hold_secs = self.hold_secs
-        self.r_adaptive_hold_secs = self.hold_secs
-
         self.pose_tracker = PoseTracker(self.config, self.lenient_mode)
+        self.l_timer = AdaptiveHoldTimer(initial_hold_secs=self.hold_secs)
+        self.r_timer = AdaptiveHoldTimer(initial_hold_secs=self.hold_secs)
         self.count = 0
-        self.l_rep_in_progress = False
-        self.r_rep_in_progress = False
-        self.l_hold_start_time = None
-        self.r_hold_start_time = None
-        self.l_rep_counted_this_hold = False
-        self.r_rep_counted_this_hold = False
         self.cap = None
         self.output = None
         self.output_with_info = None
@@ -182,66 +176,32 @@ class AnySLRTracker:
             )
 
             # Left leg
-            if self.pose_tracker.l_raise_pose:
-                if not self.l_rep_in_progress:
-                    self.l_rep_in_progress = True
-                    self.l_hold_start_time = time.time()
-                    self.l_rep_counted_this_hold = False
-                    print("[Any SLR] time for left raise", self.l_hold_start_time)
-                else:
-                    hold_duration = time.time() - self.l_hold_start_time
-                    remaining_time = self.l_adaptive_hold_secs - hold_duration
-                    if frame is not None and remaining_time > 0:
-                        cv2.putText(
-                            frame, f'hold left leg: {remaining_time:.2f}',
-                            (250, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2
-                        )
-                    if hold_duration >= self.l_adaptive_hold_secs and not self.l_rep_counted_this_hold:
-                        self.count += 1
-                        announceForCount(self.count)
-                        self.l_rep_counted_this_hold = True
-            else:
-                if self.l_rep_in_progress:
-                    actual_hold_time = time.time() - self.l_hold_start_time
-                    if actual_hold_time >= self.l_adaptive_hold_secs:
-                        extra_hold = actual_hold_time - self.l_adaptive_hold_secs
-                        self.l_adaptive_hold_secs += extra_hold * 0.5
-                        print(f"New left hold time: {self.l_adaptive_hold_secs:.2f}s")
-                    self.pose_tracker.reset()
-                self.l_rep_in_progress = False
-                self.l_hold_start_time = None
-                self.l_rep_counted_this_hold = False
+            l_timer_status = self.l_timer.update(in_hold_pose=self.pose_tracker.l_raise_pose)
+            if l_timer_status["newly_counted_rep"]:
+                self.count += 1
+                announceForCount(self.count)
+            if l_timer_status["needs_reset"]:
+                self.pose_tracker.reset()
 
             # Right leg
-            if self.pose_tracker.r_raise_pose:
-                if not self.r_rep_in_progress:
-                    self.r_rep_in_progress = True
-                    self.r_hold_start_time = time.time()
-                    self.r_rep_counted_this_hold = False
-                    print("[Any SLR] time for right raise", self.r_hold_start_time)
-                else:
-                    hold_duration = time.time() - self.r_hold_start_time
-                    remaining_time = self.r_adaptive_hold_secs - hold_duration
-                    if frame is not None and remaining_time > 0:
-                        cv2.putText(
-                            frame, f'hold right leg: {remaining_time:.2f}',
-                            (250, 90), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2
-                        )
-                    if hold_duration >= self.r_adaptive_hold_secs and not self.r_rep_counted_this_hold:
-                        self.count += 1
-                        announceForCount(self.count)
-                        self.r_rep_counted_this_hold = True
-            else:
-                if self.r_rep_in_progress:
-                    actual_hold_time = time.time() - self.r_hold_start_time
-                    if actual_hold_time >= self.r_adaptive_hold_secs:
-                        extra_hold = actual_hold_time - self.r_adaptive_hold_secs
-                        self.r_adaptive_hold_secs += extra_hold * 0.5
-                        print(f"New right hold time: {self.r_adaptive_hold_secs:.2f}s")
-                    self.pose_tracker.reset()
-                self.r_rep_in_progress = False
-                self.r_hold_start_time = None
-                self.r_rep_counted_this_hold = False
+            r_timer_status = self.r_timer.update(in_hold_pose=self.pose_tracker.r_raise_pose)
+            if r_timer_status["newly_counted_rep"]:
+                self.count += 1
+                announceForCount(self.count)
+            if r_timer_status["needs_reset"]:
+                self.pose_tracker.reset()
+
+            if display:
+                if l_timer_status["status_text"]:
+                    cv2.putText(
+                        frame, l_timer_status["status_text"],
+                        (250, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2
+                    )
+                if r_timer_status["status_text"]:
+                    cv2.putText(
+                        frame, r_timer_status["status_text"],
+                        (250, 90), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2
+                    )
 
             self._draw_info(
                 frame, lying_down, l_knee_angle, r_knee_angle, l_raise_angle, r_raise_angle,

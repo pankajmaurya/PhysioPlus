@@ -10,6 +10,7 @@ from physiocore.lib.graphics_utils import ExerciseInfoRenderer, ExerciseState, p
 from physiocore.lib.basic_math import between, calculate_angle, calculate_mid_point
 from physiocore.lib.file_utils import announceForCount, create_output_files, release_files
 from physiocore.lib.landmark_utils import calculate_angle_between_landmarks, lower_body_on_ground, detect_feet_orientation
+from physiocore.lib.timer_utils import AdaptiveHoldTimer
 
 mp_drawing = mp.solutions.drawing_utils
 mp_pose = mp.solutions.pose
@@ -61,13 +62,10 @@ class CobraStretchTracker:
 
         self.config = self._load_config(config_path or self._default_config_path())
         self.hold_secs = self.config.get("HOLD_SECS", 3)
-        self.adaptive_hold_secs = self.hold_secs
 
         self.pose_tracker = PoseTracker(self.config, self.lenient_mode)
+        self.timer = AdaptiveHoldTimer(initial_hold_secs=self.hold_secs)
         self.count = 0
-        self.rep_in_progress = False
-        self.hold_start_time = None
-        self.rep_counted_this_hold = False
         self.cap = None
         self.output = None
         self.output_with_info = None
@@ -141,41 +139,24 @@ class CobraStretchTracker:
                 l_wrist_near_torse and r_wrist_near_torse,
                 head_angle, lower_body_prone
             )
-            # Timer logic
-            if self.pose_tracker.raise_pose:
-                if not self.rep_in_progress:
-                    self.rep_in_progress = True
-                    self.hold_start_time = time.time()
-                    self.rep_counted_this_hold = False
-                    print("[Cobra] time for raise", self.hold_start_time)
-                else:
-                    hold_duration = time.time() - self.hold_start_time
-                    remaining_time = self.adaptive_hold_secs - hold_duration
-                    if frame is not None and remaining_time > 0:
-                        cv2.putText(
-                            frame,
-                            f'hold pose: {remaining_time:.2f}',
-                            (250, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2
-                        )
-                    if hold_duration >= self.adaptive_hold_secs and not self.rep_counted_this_hold:
-                        self.count += 1
-                        announceForCount(self.count)
-                        self.rep_counted_this_hold = True
-            else:
-                if self.rep_in_progress:
-                    actual_hold_time = time.time() - self.hold_start_time
-                    if actual_hold_time >= self.adaptive_hold_secs:
-                        # Adaptive logic
-                        extra_hold = actual_hold_time - self.adaptive_hold_secs
-                        self.adaptive_hold_secs += extra_hold * 0.5
-                        print(f"New hold time: {self.adaptive_hold_secs:.2f}s")
-                    self.pose_tracker.reset()
-                self.rep_in_progress = False
-                self.hold_start_time = None
-                self.rep_counted_this_hold = False
+
+            timer_status = self.timer.update(in_hold_pose=self.pose_tracker.raise_pose)
+            if timer_status["newly_counted_rep"]:
+                self.count += 1
+                announceForCount(self.count)
+
+            if timer_status["needs_reset"]:
+                self.pose_tracker.reset()
 
             # Draw info and pose
             if display:
+                if timer_status["status_text"]:
+                    cv2.putText(
+                        frame,
+                        timer_status["status_text"],
+                        (250, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2
+                    )
+
                 self._draw_info(
                     frame, angle_left_elb, angle_right_elb, raise_angle, head_angle,
                     l_wrist_close, r_wrist_close, l_wrist_near_torse, r_wrist_near_torse,

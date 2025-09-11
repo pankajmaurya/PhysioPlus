@@ -11,6 +11,7 @@ from physiocore.lib.basic_math import between
 from physiocore.lib.file_utils import announceForCount, create_output_files, release_files
 from physiocore.lib.landmark_utils import calculate_angle_between_landmarks, lower_body_on_ground
 from physiocore.lib.mp_utils import pose2
+from physiocore.lib.timer_utils import AdaptiveHoldTimer
 
 mp_drawing = mp.solutions.drawing_utils
 mp_pose = mp.solutions.pose
@@ -67,9 +68,8 @@ class AnkleToeMovementTracker:
         self.pose_tracker = PoseTracker(
             self.relax_min, self.relax_max, self.stretch_min, self.stretch_max, self.lenient_mode
         )
+        self.timer = AdaptiveHoldTimer(initial_hold_secs=self.hold_secs)
         self.count = 0
-        self.check_timer = False
-        self.old_time = None
         self.cap = None
         self.output = None
         self.output_with_info = None
@@ -129,11 +129,21 @@ class AnkleToeMovementTracker:
 
             self.pose_tracker.update(lower_body_grounded, l_angle, r_angle)
 
-            if self.pose_tracker.relax_pose and not self.pose_tracker.stretch_pose:
-                self.check_timer = False
+            timer_status = self.timer.update(in_hold_pose=self.pose_tracker.stretch_pose)
+            if timer_status["newly_counted_rep"]:
+                self.count += 1
+                announceForCount(self.count)
 
-            if self.pose_tracker.relax_pose and self.pose_tracker.stretch_pose:
-                self._handle_pose_hold(frame)
+            if timer_status["needs_reset"]:
+                self.pose_tracker.reset()
+
+            if display:
+                if timer_status["status_text"]:
+                    cv2.putText(
+                        frame,
+                        timer_status["status_text"],
+                        (250, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2
+                    )
 
             self._draw_info(frame, l_angle, r_angle, lower_body_grounded, pose_landmarks, display)
 
@@ -156,29 +166,6 @@ class AnkleToeMovementTracker:
 
         self._cleanup()
         return self.count
-
-    def _handle_pose_hold(self, frame):
-        if not self.check_timer:
-            self.old_time = time.time()
-            self.check_timer = True
-            print("[AnkleToe] time for raise", self.old_time)
-        else:
-            cur_time = time.time()
-            if cur_time - self.old_time > self.hold_secs:
-                self.count += 1
-                self.pose_tracker.reset()
-                self.check_timer = False
-                announceForCount(self.count)
-            else:
-                cv2.putText(
-                    frame,
-                    f"hold pose: {self.hold_secs - cur_time + self.old_time:.2f}",
-                    (250, 50),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    1,
-                    (255, 0, 0),
-                    2,
-                )
 
     def _draw_info(self, frame, l_angle, r_angle, lower_body_grounded, pose_landmarks, display):
         """Draw exercise information using the shared renderer."""
