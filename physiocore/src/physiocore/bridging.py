@@ -10,6 +10,7 @@ from physiocore.lib.graphics_utils import ExerciseInfoRenderer, ExerciseState, p
 from physiocore.lib.basic_math import between, calculate_angle
 from physiocore.lib.file_utils import announceForCount, create_output_files, release_files
 from physiocore.lib.landmark_utils import calculate_angle_between_landmarks, upper_body_is_lying_down
+from physiocore.lib.timer_utils import AdaptiveHoldTimer
 
 mp_drawing = mp.solutions.drawing_utils
 mp_pose = mp.solutions.pose
@@ -81,9 +82,8 @@ class BridgingTracker:
         self.hold_secs = self.config.get("HOLD_SECS", 5)
 
         self.pose_tracker = PoseTracker(self.config, self.lenient_mode)
+        self.timer = AdaptiveHoldTimer(initial_hold_secs=self.hold_secs)
         self.count = 0
-        self.check_timer = False
-        self.old_time = None
         self.cap = None
         self.output = None
         self.output_with_info = None
@@ -147,18 +147,27 @@ class BridgingTracker:
                 l_raise_angle, r_raise_angle
             )
 
-            if self.pose_tracker.resting_pose and not self.pose_tracker.raise_pose:
-                self.check_timer = False
+            timer_status = self.timer.update(in_hold_pose=self.pose_tracker.raise_pose)
+            if timer_status["newly_counted_rep"]:
+                self.count += 1
+                announceForCount(self.count)
 
-            if self.pose_tracker.resting_pose and self.pose_tracker.raise_pose:
-                self._handle_pose_hold(frame if display else None)
+            if timer_status["needs_reset"]:
+                self.pose_tracker.reset()
 
             if display:
+                if timer_status["status_text"]:
+                    cv2.putText(
+                        frame,
+                        timer_status["status_text"],
+                        (250, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2
+                    )
+
                 if self.reps and self.count >= self.reps:
                     break
                 self._draw_info(
                     frame, lying_down, l_knee_angle, r_knee_angle, l_raise_angle, r_raise_angle,
-                    l_ankle_close, r_ankle_close, self.pose_tracker.resting_pose, self.pose_tracker.raise_pose, 
+                    l_ankle_close, r_ankle_close, self.pose_tracker.resting_pose, self.pose_tracker.raise_pose,
                     pose_landmarks, display
                 )
 
@@ -175,25 +184,6 @@ class BridgingTracker:
 
         self._cleanup(display=display)
         return self.count
-
-    def _handle_pose_hold(self, frame=None):
-        if not self.check_timer:
-            self.old_time = time.time()
-            self.check_timer = True
-            print("[Bridging] time for raise", self.old_time)
-        else:
-            cur_time = time.time()
-            if cur_time - self.old_time > self.hold_secs:
-                self.count += 1
-                self.pose_tracker.reset()
-                self.check_timer = False
-                announceForCount(self.count)
-            elif frame is not None:
-                cv2.putText(
-                    frame,
-                    f'hold pose: {self.hold_secs - cur_time + self.old_time:.2f}',
-                    (250, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2
-                )
 
     def _draw_info(self, frame, lying_down, l_knee_angle, r_knee_angle, l_raise_angle, r_raise_angle,
                    l_ankle_close, r_ankle_close, resting_pose, raise_pose, pose_landmarks, display):

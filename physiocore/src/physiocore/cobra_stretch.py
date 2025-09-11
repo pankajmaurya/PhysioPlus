@@ -10,6 +10,7 @@ from physiocore.lib.graphics_utils import ExerciseInfoRenderer, ExerciseState, p
 from physiocore.lib.basic_math import between, calculate_angle, calculate_mid_point
 from physiocore.lib.file_utils import announceForCount, create_output_files, release_files
 from physiocore.lib.landmark_utils import calculate_angle_between_landmarks, lower_body_on_ground, detect_feet_orientation
+from physiocore.lib.timer_utils import AdaptiveHoldTimer
 
 mp_drawing = mp.solutions.drawing_utils
 mp_pose = mp.solutions.pose
@@ -63,9 +64,8 @@ class CobraStretchTracker:
         self.hold_secs = self.config.get("HOLD_SECS", 3)
 
         self.pose_tracker = PoseTracker(self.config, self.lenient_mode)
+        self.timer = AdaptiveHoldTimer(initial_hold_secs=self.hold_secs)
         self.count = 0
-        self.check_timer = False
-        self.start_time = None
         self.cap = None
         self.output = None
         self.output_with_info = None
@@ -90,11 +90,11 @@ class CobraStretchTracker:
     def process_video(self, video_path=None, display=True):
         self.video = video_path if video_path is not None else self.video
         self.cap = cv2.VideoCapture(self.video if self.video else 0)
-        
+
         if not self.cap.isOpened():
             print(f"Error opening video stream or file: {self.video}")
             return 0
-            
+
         input_fps = int(self.cap.get(cv2.CAP_PROP_FPS)) or 30
         delay = int(1000 / input_fps)
         if self.save_video:
@@ -139,13 +139,24 @@ class CobraStretchTracker:
                 l_wrist_near_torse and r_wrist_near_torse,
                 head_angle, lower_body_prone
             )
-            # Timer logic
-            if self.pose_tracker.resting_pose and not self.pose_tracker.raise_pose:
-                self.check_timer = False
-            if self.pose_tracker.resting_pose and self.pose_tracker.raise_pose:
-                self._handle_pose_hold(frame)
+
+            timer_status = self.timer.update(in_hold_pose=self.pose_tracker.raise_pose)
+            if timer_status["newly_counted_rep"]:
+                self.count += 1
+                announceForCount(self.count)
+
+            if timer_status["needs_reset"]:
+                self.pose_tracker.reset()
+
             # Draw info and pose
             if display:
+                if timer_status["status_text"]:
+                    cv2.putText(
+                        frame,
+                        timer_status["status_text"],
+                        (250, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2
+                    )
+
                 self._draw_info(
                     frame, angle_left_elb, angle_right_elb, raise_angle, head_angle,
                     l_wrist_close, r_wrist_close, l_wrist_near_torse, r_wrist_near_torse,
@@ -153,7 +164,7 @@ class CobraStretchTracker:
                 )
             if self.save_video and self.debug:
                 self.output_with_info.write(frame)
-            
+
             if display:
                 if self.reps and self.count >= self.reps:
                     break
@@ -164,29 +175,9 @@ class CobraStretchTracker:
                     should_quit = pause_loop()
                     if should_quit:
                         break
-        
+
         self._cleanup()
         return self.count
-
-    def _handle_pose_hold(self, frame):
-        if not self.check_timer:
-            self.start_time = time.time()
-            self.check_timer = True
-            print("[Cobra] time for raise", self.start_time)
-        else:
-            cur_time = time.time()
-            if cur_time - self.start_time > self.hold_secs:
-                self.count += 1
-                self.pose_tracker.reset()
-                self.check_timer = False
-                announceForCount(self.count)
- 
-            else:
-                cv2.putText(
-                    frame,
-                    f"hold pose: {self.hold_secs - cur_time + self.start_time:.2f}",
-                    (250, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2
-                )
 
     def _draw_info(self, frame, angle_left_elb, angle_right_elb, raise_angle, head_angle,
                    l_wrist_close, r_wrist_close, l_wrist_near_torse, r_wrist_near_torse,
