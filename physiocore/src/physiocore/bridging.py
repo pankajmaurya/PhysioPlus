@@ -200,6 +200,9 @@ class BridgingTracker:
                     should_quit = pause_loop()
                     if should_quit:
                         break
+            else:
+                # Without this, the timing calculations for tests are off.
+                time.sleep(delay / 1000.0)
 
         self._cleanup(display=display)
         return self.count

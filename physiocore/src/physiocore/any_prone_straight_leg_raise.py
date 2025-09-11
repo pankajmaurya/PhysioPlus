@@ -176,8 +176,8 @@ class AnyProneSLRTracker:
             r_raise_angle = calculate_angle(shoulder_mid, (rhip.x, rhip.y), (rankle.x, rankle.y))
             r_ankle_close = abs(ground_level - rankle.y) < 0.1
             l_ankle_close = abs(ground_level - lankle.y) < 0.1
-            lknee_high = lheel.y < lshld.y
-            rknee_high = rheel.y < rshld.y
+            lknee_high = lheel.y < lshld.y and lknee.y < lhip.y
+            rknee_high = rheel.y < rshld.y and rknee.y < rhip.y
 
             left_closer = False
 
@@ -271,6 +271,9 @@ class AnyProneSLRTracker:
                     should_quit = pause_loop()
                     if should_quit:
                         break
+            else:
+                # Without this, the timing calculations for tests are off.
+                time.sleep(delay / 1000.0)
 
         self._cleanup()
         return self.count
