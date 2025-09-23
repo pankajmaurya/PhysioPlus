@@ -185,6 +185,18 @@ class BridgingTracker:
         self._cleanup(display=display)
         return self.count
 
+    def set_hold_secs(self, hold_secs):
+        """
+        Set the hold time in seconds for bridging exercise.
+        
+        Args:
+            hold_secs (float): The hold time in seconds
+        """
+        self.hold_secs = hold_secs
+        # Update the timer with the new hold time
+        if hasattr(self, 'timer'):
+            self.timer.set_hold_time(hold_secs)
+    
     def _draw_info(self, frame, lying_down, l_knee_angle, r_knee_angle, l_raise_angle, r_raise_angle,
                    l_ankle_close, r_ankle_close, resting_pose, raise_pose, pose_landmarks, display):
         """Draw exercise information using the shared renderer."""

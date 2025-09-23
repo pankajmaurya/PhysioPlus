@@ -251,6 +251,20 @@ class AnySLRTracker:
         
         self.renderer.render_complete_frame(frame, exercise_state)
 
+    def set_hold_secs(self, hold_secs):
+        """
+        Set the hold time in seconds for straight leg raise exercise.
+        
+        Args:
+            hold_secs (float): The hold time in seconds
+        """
+        self.hold_secs = hold_secs
+        # Update both timers with the new hold time
+        if hasattr(self, 'l_timer'):
+            self.l_timer.set_hold_time(hold_secs)
+        if hasattr(self, 'r_timer'):
+            self.r_timer.set_hold_time(hold_secs)
+    
     def _cleanup(self):
         if self.cap:
             self.cap.release()

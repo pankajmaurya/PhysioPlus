@@ -3,7 +3,7 @@ import time
 # This Adaptive Timer currently only works off the system time.
 # Later we should make it work off an injected clock.
 class AdaptiveHoldTimer:
-    def __init__(self, initial_hold_secs):
+    def __init__(self, initial_hold_secs, test_mode=False):
         self.initial_hold_secs = initial_hold_secs
         self.adaptive_hold_secs = initial_hold_secs
         # This magic number can be based on a adaptive config
@@ -11,6 +11,7 @@ class AdaptiveHoldTimer:
         self.rep_in_progress = False
         self.hold_start_time = None
         self.rep_counted_this_hold = False
+        self.test_mode = test_mode
 
     def update(self, in_hold_pose):
         """
@@ -42,14 +43,15 @@ class AdaptiveHoldTimer:
             if self.rep_in_progress:
                 actual_hold_time = time.time() - self.hold_start_time
 
-                if actual_hold_time >= self.adaptive_hold_secs:
-                    extra_hold = actual_hold_time - self.adaptive_hold_secs
-                    # This puts an upper limit on how much the adaptive hold can increase.
-                    self.adaptive_hold_secs = min(self.max_adaptive_hold_secs, self.adaptive_hold_secs + extra_hold * 0.5)
-                    print(f"New hold time: {self.adaptive_hold_secs:.2f}s")
-                elif actual_hold_time >= self.initial_hold_secs:
-                    self.adaptive_hold_secs = actual_hold_time
-                    print(f"Hold time was not met. Adjusting hold time down to: {self.adaptive_hold_secs:.2f}s")
+                if not self.test_mode:
+                    if actual_hold_time >= self.adaptive_hold_secs:
+                        extra_hold = actual_hold_time - self.adaptive_hold_secs
+                        # This puts an upper limit on how much the adaptive hold can increase.
+                        self.adaptive_hold_secs = min(self.max_adaptive_hold_secs, self.adaptive_hold_secs + extra_hold * 0.5)
+                        print(f"New hold time: {self.adaptive_hold_secs:.2f}s")
+                    elif actual_hold_time >= self.initial_hold_secs:
+                        self.adaptive_hold_secs = actual_hold_time
+                        print(f"Hold time was not met. Adjusting hold time down to: {self.adaptive_hold_secs:.2f}s")
 
                 needs_reset = True
                 self.rep_in_progress = False
@@ -60,4 +62,17 @@ class AdaptiveHoldTimer:
             "newly_counted_rep": newly_counted_rep,
             "status_text": status_text,
             "needs_reset": needs_reset,
+            "adaptive_hold": self.adaptive_hold_secs
         }
+
+    def set_hold_time(self, hold_secs):
+        """
+        Update the hold time for the timer.
+        
+        Args:
+            hold_secs (float): The new hold time in seconds
+        """
+        self.initial_hold_secs = hold_secs
+        self.adaptive_hold_secs = hold_secs
+        # Reset the maximum adaptive hold time based on the new initial value
+        self.max_adaptive_hold_secs = hold_secs * 3
