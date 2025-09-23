@@ -1,5 +1,7 @@
 import time
 
+# This Adaptive Timer currently only works off the system time.
+# Later we should make it work off an injected clock.
 class AdaptiveHoldTimer:
     def __init__(self, initial_hold_secs):
         self.initial_hold_secs = initial_hold_secs
