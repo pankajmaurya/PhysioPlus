@@ -6,7 +6,7 @@ from physiocore.neck_rotation import NeckRotationTracker
 class TestNeckRotationTracker(unittest.TestCase):
 
     def test_tracker_initialization(self):
-        tracker = NeckRotationTracker()
+        tracker = NeckRotationTracker(test_mode=True)
         video_path = os.path.join(os.path.dirname(__file__), 'neck-rotation-test.mp4')
         
         # Process the video without displaying GUI

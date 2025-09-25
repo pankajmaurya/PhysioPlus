@@ -69,7 +69,7 @@ class PoseTracker:
         self.raise_pose = False
 
 class BridgingTracker:
-    def __init__(self, config_path=None):
+    def __init__(self, test_mode=False, config_path=None):
         flag_config_obj = modern_flags.parse_config()
         self.reps = flag_config_obj.reps
         self.debug = flag_config_obj.debug
@@ -82,7 +82,7 @@ class BridgingTracker:
         self.hold_secs = self.config.get("HOLD_SECS", 5)
 
         self.pose_tracker = PoseTracker(self.config, self.lenient_mode)
-        self.timer = AdaptiveHoldTimer(initial_hold_secs=self.hold_secs)
+        self.timer = AdaptiveHoldTimer(initial_hold_secs=self.hold_secs, test_mode = test_mode)
         self.count = 0
         self.cap = None
         self.output = None
