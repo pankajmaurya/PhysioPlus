@@ -196,6 +196,7 @@ class AnyProneSLRTracker:
                 announceForCount(self.count)
             if l_timer_status["needs_reset"]:
                 self.pose_tracker.reset()
+                print(f'Left leg Count {self.count} actually took time {l_timer_status["actual_hold"]}')
 
             # Timer and pose logic for right leg
             r_timer_status = self.r_timer.update(in_hold_pose=self.pose_tracker.r_raise_pose)
@@ -204,6 +205,8 @@ class AnyProneSLRTracker:
                 announceForCount(self.count)
             if r_timer_status["needs_reset"]:
                 self.pose_tracker.reset()
+                print(f'Right leg Count {self.count} actually took time {r_timer_status["actual_hold"]}')
+
 
             if display:
                 if l_timer_status["status_text"]:

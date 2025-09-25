@@ -151,7 +151,6 @@ class BridgingTracker:
             if timer_status["newly_counted_rep"]:
                 self.count += 1
                 announceForCount(self.count)
-                print(f'Count {self.count} took time {timer_status["actual_hold"]}')
 
             if timer_status["needs_reset"]:
                 print(f'Count {self.count} actually took time {timer_status["actual_hold"]}')

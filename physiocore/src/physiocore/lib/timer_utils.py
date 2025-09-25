@@ -47,7 +47,7 @@ class AdaptiveHoldTimer:
 
                 if not self.test_mode:
                     if self.actual_hold_time >= self.adaptive_hold_secs:
-                        self.extra_hold = self.actual_hold_time - self.adaptive_hold_secs
+                        extra_hold = self.actual_hold_time - self.adaptive_hold_secs
                         # This puts an upper limit on how much the adaptive hold can increase.
                         self.adaptive_hold_secs = min(self.max_adaptive_hold_secs, self.adaptive_hold_secs + extra_hold * 0.5)
                         print(f"New hold time: {self.adaptive_hold_secs:.2f}s")

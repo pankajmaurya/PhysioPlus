@@ -3,19 +3,27 @@ import os
 from physiocore.any_prone_straight_leg_raise import AnyProneSLRTracker
 
 class TestAnyProneSLRTracker(unittest.TestCase):
+
+    def compute_hold_duration(self, hold_with_display, display):
+        if display:
+            return hold_with_display
+        return hold_with_display / 1.8
+
     def test_any_prone_long_hold_video(self):
-        tracker = AnyProneSLRTracker()
-        
-        # Override HOLD_SECS for testing
+        tracker = AnyProneSLRTracker(test_mode=True)
+
         display=False
-        hold_secs = 10 if display else 8.0
+
+        # Override HOLD_SECS for testing
+        expected_hold = 12
+        hold_secs = self.compute_hold_duration(expected_hold, display)
         tracker.set_hold_secs(hold_secs)
         
         # Get the path to the video file
         video_path = os.path.join(os.path.dirname(__file__), 'prone-long-hold-2.mp4')
         
         # Process the video without displaying GUI
-        count = tracker.process_video(video_path=video_path, display=False)
+        count = tracker.process_video(video_path=video_path, display=display)
         self.assertEqual(count, 2)
 
 if __name__ == '__main__':
