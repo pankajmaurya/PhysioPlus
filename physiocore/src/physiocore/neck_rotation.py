@@ -34,7 +34,7 @@ class PoseTracker:
         self.state = "center"
 
 class NeckRotationTracker:
-    def __init__(self, config_path=None):
+    def __init__(self, test_mode=False, config_path=None):
         flag_config_obj = modern_flags.parse_config()
         self.reps = flag_config_obj.reps
         self.debug = flag_config_obj.debug
