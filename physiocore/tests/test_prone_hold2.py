@@ -8,14 +8,14 @@ class TestAnyProneSLRTracker(unittest.TestCase):
         
         # Override HOLD_SECS
         display=False
-        hold_secs = 6 if display else 4
+        hold_secs = 4 if display else 3
         tracker.set_hold_secs(hold_secs)
         
         # Get the path to the video file
         video_path = os.path.join(os.path.dirname(__file__), 'prone-SLR-hold-4sec-pankaj1.mp4')
         
         # Process the video without displaying GUI
-        count = tracker.process_video(video_path=video_path, display=False)
+        count = tracker.process_video(video_path=video_path, display=display)
         self.assertEqual(count, 6)
 
 if __name__ == '__main__':

@@ -12,6 +12,7 @@ class AdaptiveHoldTimer:
         self.hold_start_time = None
         self.rep_counted_this_hold = False
         self.test_mode = test_mode
+        self.actual_hold_time = -1
 
     def update(self, in_hold_pose):
         """
@@ -24,6 +25,7 @@ class AdaptiveHoldTimer:
         newly_counted_rep = False
         status_text = None
         needs_reset = False
+        
 
         if in_hold_pose:
             if not self.rep_in_progress:
@@ -41,16 +43,16 @@ class AdaptiveHoldTimer:
                     self.rep_counted_this_hold = True
         else:
             if self.rep_in_progress:
-                actual_hold_time = time.time() - self.hold_start_time
+                self.actual_hold_time = time.time() - self.hold_start_time
 
                 if not self.test_mode:
-                    if actual_hold_time >= self.adaptive_hold_secs:
-                        extra_hold = actual_hold_time - self.adaptive_hold_secs
+                    if self.actual_hold_time >= self.adaptive_hold_secs:
+                        self.extra_hold = self.actual_hold_time - self.adaptive_hold_secs
                         # This puts an upper limit on how much the adaptive hold can increase.
                         self.adaptive_hold_secs = min(self.max_adaptive_hold_secs, self.adaptive_hold_secs + extra_hold * 0.5)
                         print(f"New hold time: {self.adaptive_hold_secs:.2f}s")
-                    elif actual_hold_time >= self.initial_hold_secs:
-                        self.adaptive_hold_secs = actual_hold_time
+                    elif self.actual_hold_time >= self.initial_hold_secs:
+                        self.adaptive_hold_secs = self.actual_hold_time
                         print(f"Hold time was not met. Adjusting hold time down to: {self.adaptive_hold_secs:.2f}s")
 
                 needs_reset = True
@@ -62,7 +64,8 @@ class AdaptiveHoldTimer:
             "newly_counted_rep": newly_counted_rep,
             "status_text": status_text,
             "needs_reset": needs_reset,
-            "adaptive_hold": self.adaptive_hold_secs
+            "adaptive_hold": self.adaptive_hold_secs,
+            "actual_hold": self.actual_hold_time
         }
 
     def set_hold_time(self, hold_secs):
