@@ -153,9 +153,6 @@ class BridgingTracker:
                 announceForCount(self.count)
 
             if timer_status["needs_reset"]:
-                print(f'Count {self.count} actually took time {timer_status["actual_hold"]}')
-
-            if timer_status["needs_reset"]:
                 self.pose_tracker.reset()
 
             if display:
