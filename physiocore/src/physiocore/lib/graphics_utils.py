@@ -3,6 +3,7 @@ from mediapipe.python.solutions.drawing_utils import DrawingSpec
 import cv2
 from dataclasses import dataclass
 from typing import Optional, Dict, Any
+import time
 
 # Drawing Specifications (Modify these parameters dynamically)
 # Moved some of this code out of the while loop - it does not need to run every iteration
@@ -157,6 +158,25 @@ class ExerciseInfoRenderer:
             landmark_drawing_spec=custom_style
         )
     
+    def draw_datetime(self, frame):
+        """Draw current date and time in the right bottom corner of the frame.
+        
+        Args:
+            frame: OpenCV frame to draw on
+        """
+        current_datetime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        frame_height, frame_width = frame.shape[:2]
+        # Shift slightly to the left to ensure full visibility
+        cv2.putText(
+            frame, 
+            current_datetime, 
+            (frame_width - 300, frame_height - 20), 
+            cv2.FONT_HERSHEY_SIMPLEX, 
+            0.7, 
+            (255, 255, 255), 
+            2
+        )
+    
     def show_frame(self, frame, exercise_state: ExerciseState):
         """Display the frame with exercise name as window title.
         
@@ -170,7 +190,7 @@ class ExerciseInfoRenderer:
             cv2.imshow(window_name, frame)
     
     def render_complete_frame(self, frame, exercise_state: ExerciseState):
-        """Complete rendering pipeline: draw info, landmarks, and optionally show frame.
+        """Complete rendering pipeline: draw info, landmarks, datetime, and optionally show frame.
         
         Args:
             frame: OpenCV frame to render on
@@ -178,6 +198,7 @@ class ExerciseInfoRenderer:
         """
         self.draw_exercise_info(frame, exercise_state)
         self.draw_pose_landmarks(frame, exercise_state)
+        self.draw_datetime(frame)
         self.show_frame(frame, exercise_state)
     
     def _get_debug_color(self, key: str) -> tuple:
