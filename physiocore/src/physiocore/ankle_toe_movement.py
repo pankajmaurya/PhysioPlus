@@ -48,7 +48,7 @@ class PoseTracker:
 
 
 class AnkleToeMovementTracker:
-    def __init__(self, config_path=None):
+    def __init__(self, test_mode=False, config_path=None):
         flag_config_obj = modern_flags.parse_config()
         self.reps = flag_config_obj.reps
         self.debug = flag_config_obj.debug
@@ -68,7 +68,7 @@ class AnkleToeMovementTracker:
         self.pose_tracker = PoseTracker(
             self.relax_min, self.relax_max, self.stretch_min, self.stretch_max, self.lenient_mode
         )
-        self.timer = AdaptiveHoldTimer(initial_hold_secs=self.hold_secs)
+        self.timer = AdaptiveHoldTimer(initial_hold_secs=self.hold_secs, test_mode = test_mode)
         self.count = 0
         self.cap = None
         self.output = None
@@ -130,6 +130,7 @@ class AnkleToeMovementTracker:
             self.pose_tracker.update(lower_body_grounded, l_angle, r_angle)
 
             timer_status = self.timer.update(in_hold_pose=self.pose_tracker.stretch_pose)
+
             if timer_status["newly_counted_rep"]:
                 self.count += 1
                 announceForCount(self.count)
@@ -190,6 +191,18 @@ class AnkleToeMovementTracker:
         
         self.renderer.render_complete_frame(frame, exercise_state)
 
+    def set_hold_secs(self, hold_secs):
+        """
+        Set the hold time in seconds for ankle toe movement exercise.
+        
+        Args:
+            hold_secs (float): The hold time in seconds
+        """
+        self.hold_secs = hold_secs
+        # Update the timer with the new hold time
+        if hasattr(self, 'timer'):
+            self.timer.set_hold_time(hold_secs)
+    
     def _cleanup(self):
         if self.cap:
             self.cap.release()

@@ -85,7 +85,7 @@ class PoseTracker:
         self.r_raise_pose = False
 
 class AnyProneSLRTracker:
-    def __init__(self, config_path=None):
+    def __init__(self, test_mode=False, config_path=None):
         flag_config_obj = modern_flags.parse_config()
         self.reps = flag_config_obj.reps
         self.debug = flag_config_obj.debug
@@ -99,8 +99,8 @@ class AnyProneSLRTracker:
 
         self.pose_tracker = PoseTracker(self.config, self.lenient_mode)
         self.smoother = LandmarkSmoother()
-        self.l_timer = AdaptiveHoldTimer(initial_hold_secs=self.hold_secs)
-        self.r_timer = AdaptiveHoldTimer(initial_hold_secs=self.hold_secs)
+        self.l_timer = AdaptiveHoldTimer(initial_hold_secs=self.hold_secs, test_mode = test_mode)
+        self.r_timer = AdaptiveHoldTimer(initial_hold_secs=self.hold_secs, test_mode = test_mode)
         self.count = 0
         self.cap = None
         self.output = None
@@ -196,6 +196,7 @@ class AnyProneSLRTracker:
                 announceForCount(self.count)
             if l_timer_status["needs_reset"]:
                 self.pose_tracker.reset()
+                print(f'Left leg Count {self.count} actually took time {l_timer_status["actual_hold"]}')
 
             # Timer and pose logic for right leg
             r_timer_status = self.r_timer.update(in_hold_pose=self.pose_tracker.r_raise_pose)
@@ -204,6 +205,8 @@ class AnyProneSLRTracker:
                 announceForCount(self.count)
             if r_timer_status["needs_reset"]:
                 self.pose_tracker.reset()
+                print(f'Right leg Count {self.count} actually took time {r_timer_status["actual_hold"]}')
+
 
             if display:
                 if l_timer_status["status_text"]:
@@ -266,6 +269,20 @@ class AnyProneSLRTracker:
         
         self.renderer.render_complete_frame(frame, exercise_state)
 
+    def set_hold_secs(self, hold_secs):
+        """
+        Set the hold time in seconds for prone straight leg raise exercise.
+        
+        Args:
+            hold_secs (float): The hold time in seconds
+        """
+        self.hold_secs = hold_secs
+        # Update both timers with the new hold time
+        if hasattr(self, 'l_timer'):
+            self.l_timer.set_hold_time(hold_secs)
+        if hasattr(self, 'r_timer'):
+            self.r_timer.set_hold_time(hold_secs)
+    
     def _cleanup(self):
         if self.cap:
             self.cap.release()

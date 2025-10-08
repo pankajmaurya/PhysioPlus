@@ -5,10 +5,11 @@ from physiocore.cobra_stretch import CobraStretchTracker
 class TestCobraStretchTracker(unittest.TestCase):
 
     def test_cobra_video(self):
-        tracker = CobraStretchTracker()
+        tracker = CobraStretchTracker(test_mode=True)
         display = False 
         # Override HOLD_SECS
-        tracker.hold_secs = 0.1 if not display else 1.0
+        hold_secs = 0.1 if not display else 1.0
+        tracker.set_hold_secs(hold_secs)
         
         # Get the path to the video file
         video_path = os.path.join(os.path.dirname(__file__), 'cobra-mini.mp4')
