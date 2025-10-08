@@ -67,15 +67,23 @@ class PoseTracker:
                 between(self.knee_angle_min, r_knee, self.knee_angle_max)
             )
 
-        self.l_raise_pose = possible_l_raise_pose and not possible_r_raise_pose
-        self.r_raise_pose = possible_r_raise_pose and not possible_l_raise_pose
+        # Determine which leg is raised, ensuring mutual exclusivity.
+        l_is_raised = False
+        r_is_raised = False
 
         if possible_l_raise_pose and possible_r_raise_pose:
-            # break tie somehow?
+            # Both legs are in a potential raise pose, use camera proximity to break the tie.
             if left_closer:
-                self.l_raise_pose = True
+                l_is_raised = True
             else:
-                self.r_raise_pose = True
+                r_is_raised = True
+        elif possible_l_raise_pose:
+            l_is_raised = True
+        elif possible_r_raise_pose:
+            r_is_raised = True
+
+        self.l_raise_pose = l_is_raised
+        self.r_raise_pose = r_is_raised
 
 
     def reset(self):
@@ -179,10 +187,11 @@ class AnyProneSLRTracker:
             prone_lying = lying_down and (feet_orien == "Feet are downwards" or feet_orien == "either feet is downward")
 
             if prone_lying:
-                if lknee.z < rknee.z:
-                    left_closer = True
-                if lhip.z < rhip.z:
-                    left_closer = True
+                # The user's side is determined by the z-coordinate of the hip.
+                # A lower z-coordinate means the hip is closer to the camera.
+                # This is a more stable indicator than the knee's z-coordinate, which
+                # can fluctuate more.
+                left_closer = lhip.z < rhip.z
             # print(f'feet are {feet_orien}')
 
             self.pose_tracker.update(prone_lying, left_closer,
