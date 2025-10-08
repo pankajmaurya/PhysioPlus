@@ -1,0 +1,5 @@
+{
+    "HOLD_SECS": 3,
+    "rest_threshold": 1.05,
+    "squeeze_threshold": 0.95
+}
