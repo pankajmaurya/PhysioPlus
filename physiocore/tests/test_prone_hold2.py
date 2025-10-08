@@ -1,7 +1,7 @@
 import unittest
 import os
 from physiocore.any_prone_straight_leg_raise import AnyProneSLRTracker
-from .test_utils import compute_hold_duration
+from test_utils import compute_hold_duration
 
 class TestAnyProneSLRTracker(unittest.TestCase):
     def test_any_prone_long_hold_video(self):
