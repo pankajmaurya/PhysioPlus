@@ -1,5 +1,4 @@
 """Common utilities for PhysioCore tests."""
-
 def compute_hold_duration(hold_with_display, display):
     """
     Compute the hold duration based on display setting.
