@@ -1,16 +1,18 @@
 import unittest
 import os
 from physiocore.any_straight_leg_raise import AnySLRTracker
+from test_utils import compute_hold_duration
 
 class TestAnySLRTracker(unittest.TestCase):
 
     def test_slr_video(self):
-        tracker = AnySLRTracker()
+        tracker = AnySLRTracker(test_mode=True)
         tracker.debug = True
         
         # Override HOLD_SECS for testing
         display = False
-        tracker.hold_secs = 1.0 if display else 0.5
+        hold_secs = compute_hold_duration(1, display)
+        tracker.set_hold_secs(hold_secs)
         
         # Get the path to the video file
         video_path = os.path.join(os.path.dirname(__file__), 'slr-mini.mp4')

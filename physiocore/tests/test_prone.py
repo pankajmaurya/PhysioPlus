@@ -1,14 +1,17 @@
 import unittest
 import os
 from physiocore.any_prone_straight_leg_raise import AnyProneSLRTracker
+from test_utils import compute_hold_duration
 
 class TestAnyProneSLRTracker(unittest.TestCase):
 
     def test_any_prone_video(self):
-        tracker = AnyProneSLRTracker()
+        tracker = AnyProneSLRTracker(test_mode=True)
         
         # Override HOLD_SECS
-        # tracker.hold_secs = 1.0
+        display=False
+        hold_secs = compute_hold_duration(1, display)
+        tracker.set_hold_secs(hold_secs)
         
         # Get the path to the video file
         video_path = os.path.join(os.path.dirname(__file__), 'prone-mini-test.mp4')

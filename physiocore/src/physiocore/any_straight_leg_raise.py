@@ -82,7 +82,7 @@ class PoseTracker:
         self.l_raise_pose = self.r_raise_pose = False
 
 class AnySLRTracker:
-    def __init__(self, config_path=None):
+    def __init__(self, test_mode=False, config_path=None):
         flag_config_obj = modern_flags.parse_config()
         self.reps = flag_config_obj.reps
         self.debug = flag_config_obj.debug
@@ -98,8 +98,8 @@ class AnySLRTracker:
             self.hold_secs = 8.0 * self.hold_secs / 30.0
 
         self.pose_tracker = PoseTracker(self.config, self.lenient_mode)
-        self.l_timer = AdaptiveHoldTimer(initial_hold_secs=self.hold_secs)
-        self.r_timer = AdaptiveHoldTimer(initial_hold_secs=self.hold_secs)
+        self.l_timer = AdaptiveHoldTimer(initial_hold_secs=self.hold_secs, test_mode = test_mode)
+        self.r_timer = AdaptiveHoldTimer(initial_hold_secs=self.hold_secs, test_mode = test_mode)
         self.count = 0
         self.cap = None
         self.output = None
@@ -251,6 +251,20 @@ class AnySLRTracker:
         
         self.renderer.render_complete_frame(frame, exercise_state)
 
+    def set_hold_secs(self, hold_secs):
+        """
+        Set the hold time in seconds for straight leg raise exercise.
+        
+        Args:
+            hold_secs (float): The hold time in seconds
+        """
+        self.hold_secs = hold_secs
+        # Update both timers with the new hold time
+        if hasattr(self, 'l_timer'):
+            self.l_timer.set_hold_time(hold_secs)
+        if hasattr(self, 'r_timer'):
+            self.r_timer.set_hold_time(hold_secs)
+    
     def _cleanup(self):
         if self.cap:
             self.cap.release()

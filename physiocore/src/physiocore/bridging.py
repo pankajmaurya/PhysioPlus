@@ -69,7 +69,7 @@ class PoseTracker:
         self.raise_pose = False
 
 class BridgingTracker:
-    def __init__(self, config_path=None):
+    def __init__(self, test_mode=False, config_path=None):
         flag_config_obj = modern_flags.parse_config()
         self.reps = flag_config_obj.reps
         self.debug = flag_config_obj.debug
@@ -82,7 +82,7 @@ class BridgingTracker:
         self.hold_secs = self.config.get("HOLD_SECS", 5)
 
         self.pose_tracker = PoseTracker(self.config, self.lenient_mode)
-        self.timer = AdaptiveHoldTimer(initial_hold_secs=self.hold_secs)
+        self.timer = AdaptiveHoldTimer(initial_hold_secs=self.hold_secs, test_mode = test_mode)
         self.count = 0
         self.cap = None
         self.output = None
@@ -185,6 +185,18 @@ class BridgingTracker:
         self._cleanup(display=display)
         return self.count
 
+    def set_hold_secs(self, hold_secs):
+        """
+        Set the hold time in seconds for bridging exercise.
+        
+        Args:
+            hold_secs (float): The hold time in seconds
+        """
+        self.hold_secs = hold_secs
+        # Update the timer with the new hold time
+        if hasattr(self, 'timer'):
+            self.timer.set_hold_time(hold_secs)
+    
     def _draw_info(self, frame, lying_down, l_knee_angle, r_knee_angle, l_raise_angle, r_raise_angle,
                    l_ankle_close, r_ankle_close, resting_pose, raise_pose, pose_landmarks, display):
         """Draw exercise information using the shared renderer."""

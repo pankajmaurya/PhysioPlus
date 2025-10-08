@@ -51,7 +51,7 @@ class PoseTracker:
         self.raise_pose = False
 
 class CobraStretchTracker:
-    def __init__(self, config_path=None):
+    def __init__(self, test_mode=False, config_path=None):
         flag_config_obj = modern_flags.parse_config()
         self.reps = flag_config_obj.reps
         self.debug = flag_config_obj.debug
@@ -64,7 +64,7 @@ class CobraStretchTracker:
         self.hold_secs = self.config.get("HOLD_SECS", 3)
 
         self.pose_tracker = PoseTracker(self.config, self.lenient_mode)
-        self.timer = AdaptiveHoldTimer(initial_hold_secs=self.hold_secs)
+        self.timer = AdaptiveHoldTimer(initial_hold_secs=self.hold_secs, test_mode = test_mode)
         self.count = 0
         self.cap = None
         self.output = None
@@ -179,6 +179,18 @@ class CobraStretchTracker:
         self._cleanup()
         return self.count
 
+    def set_hold_secs(self, hold_secs):
+        """
+        Set the hold time in seconds for cobra stretch exercise.
+        
+        Args:
+            hold_secs (float): The hold time in seconds
+        """
+        self.hold_secs = hold_secs
+        # Update the timer with the new hold time
+        if hasattr(self, 'timer'):
+            self.timer.set_hold_time(hold_secs)
+    
     def _draw_info(self, frame, angle_left_elb, angle_right_elb, raise_angle, head_angle,
                    l_wrist_close, r_wrist_close, l_wrist_near_torse, r_wrist_near_torse,
                    lower_body_prone, feet_orien, pose_landmarks, display):
