@@ -1,6 +1,7 @@
 import unittest
 import os
 from physiocore.any_straight_leg_raise import AnySLRTracker
+from test_utils import compute_hold_duration
 
 class TestAnySLRTracker(unittest.TestCase):
 
@@ -10,7 +11,7 @@ class TestAnySLRTracker(unittest.TestCase):
         
         # Override HOLD_SECS for testing
         display = False
-        hold_secs = 1 if display else 0.5
+        hold_secs = compute_hold_duration(1, display)
         tracker.set_hold_secs(hold_secs)
         
         # Get the path to the video file

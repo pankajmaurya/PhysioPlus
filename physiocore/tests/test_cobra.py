@@ -1,6 +1,7 @@
 import unittest
 import os
 from physiocore.cobra_stretch import CobraStretchTracker
+from test_utils import compute_hold_duration
 
 class TestCobraStretchTracker(unittest.TestCase):
 
@@ -8,7 +9,7 @@ class TestCobraStretchTracker(unittest.TestCase):
         tracker = CobraStretchTracker(test_mode=True)
         display = False 
         # Override HOLD_SECS
-        hold_secs = 0.1 if not display else 1.0
+        hold_secs = compute_hold_duration(1.0, display)
         tracker.set_hold_secs(hold_secs)
         
         # Get the path to the video file

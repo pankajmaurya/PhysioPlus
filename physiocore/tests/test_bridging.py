@@ -1,6 +1,7 @@
 import unittest
 import os
 from physiocore.bridging import BridgingTracker
+from test_utils import compute_hold_duration
 
 class TestBridgingTracker(unittest.TestCase):
 
@@ -10,7 +11,7 @@ class TestBridgingTracker(unittest.TestCase):
         # Override HOLD_SECS
         # TODO: Investigate why override needed with display off mode
         display=False
-        hold_secs = 1.0 if display else 0.1
+        hold_secs = compute_hold_duration(1.0, display)
         tracker.set_hold_secs(hold_secs)
         
         # Get the path to the video file
