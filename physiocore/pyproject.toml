@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "physiocore"
-version = "0.3.4"
+version = "0.3.5"
 description = "A physiotherapy exercise toolkit with movement scripts, utilities, and resources."
 readme = "README.md"
 # TODO: Need to test 3.11 version before checkin.
