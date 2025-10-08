@@ -1,10 +1,15 @@
-def compute_hold_duration(base_duration, display_mode):
+"""Common utilities for PhysioCore tests."""
+def compute_hold_duration(hold_with_display, display):
     """
-    Computes the hold duration for a test.
-    If display_mode is True, the duration is returned as is.
-    Otherwise, the duration is set to 0.1 seconds to speed up tests.
+    Compute the hold duration based on display setting.
+    
+    Args:
+        hold_with_display (float): The hold duration when display is True
+        display (bool): Whether display is enabled
+        
+    Returns:
+        float: The computed hold duration
     """
-    if display_mode:
-        return base_duration
-    else:
-        return 0.1
+    if display:
+        return hold_with_display
+    return hold_with_display / 1.8
